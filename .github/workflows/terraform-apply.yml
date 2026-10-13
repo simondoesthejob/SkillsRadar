@@ -1,0 +1,40 @@
+name: Terraform apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "src/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    # Jobs using this environment can assume the apply role. Add required reviewers to the
+    # 'dev' environment in GitHub settings if you want a manual approval gate.
+    environment: dev
+    if: ${{ vars.AWS_APPLY_ROLE_ARN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: eu-west-2
+      - name: Init
+        working-directory: terraform/envs/dev
+        run: terraform init -input=false -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="region=eu-west-2"
+      - name: Apply
+        working-directory: terraform/envs/dev
+        run: terraform apply -input=false -auto-approve -lock-timeout=60s
