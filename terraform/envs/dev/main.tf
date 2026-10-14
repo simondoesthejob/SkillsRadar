@@ -20,18 +20,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.region
-
-  default_tags {
-    tags = {
-      Project     = "skills-radar"
-      Environment = "dev"
-      ManagedBy   = "terraform"
-    }
-  }
-}
-
 locals {
   name_prefix = "skillsradar-dev"
 }

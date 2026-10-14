@@ -32,7 +32,7 @@ jobs:
       - run: terraform fmt -check -recursive terraform
       - name: Validate each root module (no backend, no credentials needed)
         run: |
-          for dir in terraform/bootstrap terraform/envs/dev; do
+          for dir in terraform/iam terraform/bootstrap terraform/envs/dev; do
             terraform -chdir="$dir" init -backend=false -input=false
             terraform -chdir="$dir" validate
           done

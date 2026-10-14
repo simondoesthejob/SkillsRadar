@@ -16,18 +16,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.region
-
-  default_tags {
-    tags = {
-      Project   = "skills-radar"
-      ManagedBy = "terraform"
-      Stack     = "iam"
-    }
-  }
-}
-
 module "iam_groups" {
   source = "../modules/iam_groups"
 

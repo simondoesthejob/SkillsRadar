@@ -37,6 +37,26 @@ make lint
 make test
 ```
 
+## Connecting Terraform to AWS
+
+Each stack (`terraform/iam`, `terraform/bootstrap`, `terraform/envs/dev`) has a `providers.tf` that
+defines the connection. It holds **no credentials**; those come from the standard AWS chain. Pick
+one way to authenticate:
+
+| Situation | How |
+|---|---|
+| Your own machine, IAM Identity Center | `aws sso login --profile <name>` then `export AWS_PROFILE=<name>` |
+| Your own machine, IAM user with MFA | `aws sts get-session-token ...` and export the three `AWS_*` variables (see [docs/iam-access.md](docs/iam-access.md)) |
+| GitHub Actions | Nothing to set: the workflows use OIDC |
+
+Then copy each stack's `terraform.tfvars.example` to `terraform.tfvars` (git-ignored) and set at
+least `allowed_account_ids`. Terraform then refuses to run if your credentials belong to a different
+AWS account, which is a cheap protection against applying to the wrong one. `aws_profile` and
+`assume_role_arn` are optional overrides.
+
+The S3 backend in `terraform/envs/dev` authenticates on its own and ignores the `aws_profile`
+variable, so use the `AWS_PROFILE` environment variable if you use profiles.
+
 ## First deployment
 
 1. **Prerequisites:** an AWS account with a budget alert set, the AWS CLI configured, Terraform

@@ -12,18 +12,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.region
-
-  default_tags {
-    tags = {
-      Project   = "skills-radar"
-      ManagedBy = "terraform"
-      Stack     = "bootstrap"
-    }
-  }
-}
-
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "state" {
