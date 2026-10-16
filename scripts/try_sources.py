@@ -1,4 +1,5 @@
 """Smoke-test the live APIs. Usage: python scripts/try_sources.py reed|adzuna|hn_hiring"""
+
 import itertools
 import os
 import sys
@@ -12,9 +13,13 @@ if name == "reed":
     source = ReedSource(os.environ["REED_API_KEY"], queries=("data engineer",), pages_per_query=1)
 elif name == "adzuna":
     source = AdzunaSource(
-        os.environ["ADZUNA_APP_ID"], os.environ["ADZUNA_APP_KEY"],
-        country="gb", queries=("data engineer",), pages_per_query=1,
-        results_per_page=10, request_interval=2.5,
+        os.environ["ADZUNA_APP_ID"],
+        os.environ["ADZUNA_APP_KEY"],
+        country="gb",
+        queries=("data engineer",),
+        pages_per_query=1,
+        results_per_page=10,
+        request_interval=2.5,
     )
 else:
     source = HnWhoIsHiring(threads=1)
