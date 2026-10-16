@@ -1,7 +1,7 @@
 .PHONY: install lint test fmt tf-fmt
 
 install:
-	python -m pip install -e ".[dev]"
+	python3 -m pip install -e ".[dev]"
 
 lint:
 	ruff check .

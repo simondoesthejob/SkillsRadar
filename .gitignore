@@ -4,9 +4,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .build/
+.private/
 .terraform/
-*.tfstate
-*.tfstate.*
 *.tfvars
 !*.tfvars.example
 backend.hcl

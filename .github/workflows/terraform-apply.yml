@@ -22,13 +22,15 @@ jobs:
     # Jobs using this environment can assume the apply role. Add required reviewers to the
     # 'dev' environment in GitHub settings if you want a manual approval gate.
     environment: dev
-    if: ${{ vars.AWS_APPLY_ROLE_ARN != '' }}
+    # No job-level `if` on AWS_APPLY_ROLE_ARN: environment variables are not visible to a
+    # job-level condition (the environment is attached after it is evaluated), so it would
+    # always skip. The role step fails clearly if the variable is missing instead.
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "~1.10"
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
           aws-region: eu-west-2
