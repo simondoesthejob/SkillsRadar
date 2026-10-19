@@ -5,5 +5,5 @@ variable "region" {
 
 variable "ingest_schedule_enabled" {
   type    = bool
-  default = false
+  default = true
 }
