@@ -31,6 +31,33 @@ locals {
     { name = "ingested_at", type = "string" },
   ]
 
+  // Columns of the curated Parquet files. Must match src/skillsradar/curate/schema.py (a unit test
+  // compares the two). `source` and `dt` are partition keys, not columns.
+  curated_columns = [
+    { name = "source_id", type = "string" },
+    { name = "dedupe_key", type = "string" },
+    { name = "title", type = "string" },
+    { name = "company", type = "string" },
+    { name = "location", type = "string" },
+    { name = "remote", type = "boolean" },
+    { name = "description", type = "string" },
+    { name = "description_truncated", type = "boolean" },
+    { name = "url", type = "string" },
+    { name = "posted_date", type = "date" },
+    { name = "salary_min", type = "double" },
+    { name = "salary_max", type = "double" },
+    { name = "salary_is_predicted", type = "boolean" },
+    { name = "salary_annual_min", type = "double" },
+    { name = "salary_annual_max", type = "double" },
+    { name = "salary_basis", type = "string" },
+    { name = "category", type = "string" },
+    { name = "contract_type", type = "string" },
+    { name = "observed_count", type = "int" },
+    { name = "first_ingested_at", type = "string" },
+    { name = "last_ingested_at", type = "string" },
+    { name = "curated_at", type = "string" },
+  ]
+
   queries = { for file in fileset("${path.module}/queries", "*.sql") : trimsuffix(file, ".sql") => file }
 }
 
@@ -118,5 +145,57 @@ resource "aws_athena_named_query" "this" {
   database    = aws_glue_catalog_database.this.name
   query       = file("${path.module}/queries/${each.value}")
 
-  depends_on = [aws_glue_catalog_table.raw_postings]
+  depends_on = [aws_glue_catalog_table.raw_postings, aws_glue_catalog_table.curated_postings]
+}
+
+resource "aws_glue_catalog_table" "curated_postings" {
+  name          = "curated_postings"
+  database_name = aws_glue_catalog_database.this.name
+  description   = "Validated, de-duplicated postings: one row per posting per source per day (Parquet)."
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    EXTERNAL       = "TRUE"
+    classification = "parquet"
+
+    "projection.enabled"          = "true"
+    "projection.source.type"      = "enum"
+    "projection.source.values"    = join(",", var.sources)
+    "projection.dt.type"          = "date"
+    "projection.dt.format"        = "yyyy-MM-dd"
+    "projection.dt.range"         = "${var.projection_start_date},NOW"
+    "projection.dt.interval"      = "1"
+    "projection.dt.interval.unit" = "DAYS"
+    "storage.location.template"   = "s3://${var.curated_bucket_name}/postings/dt=$${dt}/source=$${source}/"
+  }
+
+  partition_keys {
+    name = "dt"
+    type = "string"
+  }
+
+  partition_keys {
+    name = "source"
+    type = "string"
+  }
+
+  storage_descriptor {
+    location      = "s3://${var.curated_bucket_name}/postings/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+
+    ser_de_info {
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+      parameters            = { "serialization.format" = "1" }
+    }
+
+    dynamic "columns" {
+      for_each = local.curated_columns
+
+      content {
+        name = columns.value.name
+        type = columns.value.type
+      }
+    }
+  }
 }

@@ -33,7 +33,7 @@ Differentiators to protect (see docs/roadmap.md):
 | `terraform/iam/` | Stack: IAM groups and policies (admin applies once, local state, no CI) |
 | `terraform/bootstrap/` | Stack: state bucket and GitHub OIDC roles (applied once locally, local state) |
 | `terraform/envs/dev/` | Stack: data buckets and ingestion (S3 remote state, applied by CI) |
-| `terraform/modules/` | `data`, `ingest`, `github_oidc`, `iam_groups` |
+| `terraform/modules/` | `data`, `ingest`, `curate`, `analytics`, `github_oidc`, `iam_groups` |
 | `.github/workflows/` | `ci.yml`, `terraform-plan.yml` (PRs), `terraform-apply.yml` (main, `dev` environment) |
 | `docs/` | architecture.md, data-sources.md, roadmap.md, iam-access.md |
 
@@ -72,19 +72,22 @@ then `init -backend=false` and `validate` in each of the three root stacks.
 
 ## Status
 Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progress.
-- Python: 24 tests pass and ruff is clean.
+- Python: all tests pass and ruff is clean (`test_curate_parquet.py` needs pyarrow, which the dev extra installs).
 - Terraform: CI runs `fmt` and `validate`; the apply workflow deploys `envs/dev` through GitHub OIDC.
   The IAM policies in `iam_groups` are best-effort and were never tested against live AWS, so expect
   the odd AccessDenied to need one more action.
 - The GitHub OIDC `sub` claim for this repo is ID-qualified (`owner@id/name@id`), so the bootstrap's
   `github_repo` variable must use that form.
 - Done: keys stored, each source tested, daily schedule enabled and confirmed working.
-- Phase 2 step 1 built, not yet applied: `terraform/modules/analytics` (Glue database and table with
+- Phase 2 step 1 (applied, working): `terraform/modules/analytics` (Glue database and table with
   partition projection, Athena workgroup with a 1 GiB scan cap, five saved queries in
   `terraform/modules/analytics/queries/`). Needs a push to main (CI apply) and a one-off re-apply of
   `terraform/iam` so the operator group can run Athena queries.
-- Next: curation job (Parquet, validation, dedupe, salary normalisation), Reed enrichment, Step
-  Functions; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+- Phase 2 step 2 built, not yet deployed: `src/skillsradar/curate/` + `terraform/modules/curate`
+  (Lambda with AWS SDK for pandas layer for pyarrow) + `curated_postings` table and three saved queries.
+  Invoke with `{"all": true}` to backfill. Heuristics: salary period inferred from magnitude;
+  truncation limits adzuna 500 / reed 450; HN location parsed from header line.
+- Next: Reed enrichment, cross-source dedupe, Step Functions; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
 - Terraform formatting can be checked here with OpenTofu (`tofu fmt`); providers cannot be fetched
   in the sandbox, so `validate` only runs in CI.
 

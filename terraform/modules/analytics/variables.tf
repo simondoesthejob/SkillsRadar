@@ -8,6 +8,11 @@ variable "raw_bucket_name" {
   type        = string
 }
 
+variable "curated_bucket_name" {
+  description = "Bucket holding the curated Parquet written by the curation Lambda (postings/dt=.../source=.../)."
+  type        = string
+}
+
 variable "results_bucket_name" {
   description = "Bucket for Athena query results (the artifacts bucket)."
   type        = string

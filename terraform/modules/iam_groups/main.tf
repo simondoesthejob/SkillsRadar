@@ -236,6 +236,13 @@ data "aws_iam_policy_document" "bootstrap_analytics" {
     ]
   }
 
+  // The curation Lambda uses the AWS SDK for pandas managed layer, published by an AWS account.
+  statement {
+    sid       = "UseManagedPandasLayer"
+    actions   = ["lambda:GetLayerVersion"]
+    resources = ["arn:aws:lambda:*:336392948345:layer:AWSSDKPandas-*"]
+  }
+
   statement {
     sid = "AthenaWorkgroups"
     actions = [

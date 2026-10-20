@@ -48,5 +48,18 @@ module "analytics" {
 
   name_prefix         = local.name_prefix
   raw_bucket_name     = module.data.bucket_names["raw"]
+  curated_bucket_name = module.data.bucket_names["curated"]
   results_bucket_name = module.data.bucket_names["artifacts"]
+}
+
+module "curate" {
+  source = "../../modules/curate"
+
+  name_prefix         = local.name_prefix
+  source_dir          = "${path.root}/../../../src"
+  raw_bucket_name     = module.data.bucket_names["raw"]
+  raw_bucket_arn      = module.data.bucket_arns["raw"]
+  curated_bucket_name = module.data.bucket_names["curated"]
+  curated_bucket_arn  = module.data.bucket_arns["curated"]
+  pandas_layer_arn    = var.pandas_layer_arn
 }

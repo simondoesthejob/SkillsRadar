@@ -25,13 +25,21 @@ it as a development dataset, not as UK evidence).
   (`terraform/modules/analytics`, partition projection on `source` and `dt`), an Athena
   workgroup with a scan limit and results in the artifacts bucket, and five saved example
   queries in `terraform/modules/analytics/queries/`.
-- **Curation job** (Glue job or Lambda, whichever is simpler for the volume): writes Parquet to the
-  curated bucket, partitioned by date. It does:
-  - schema validation (Pandera or Great Expectations), with metrics sent to CloudWatch;
-  - dedupe within a source on `dedupe_key`, then across sources on normalised title, company and
-    location, with a similarity check on descriptions for near-duplicates;
-  - salary normalisation to an annual figure, flagging predicted and non-annual values;
-  - dropping personal contact details found in Hacker News comments.
+- **Curation job (built, not yet deployed):** a Python Lambda (`skillsradar.curate`, with pyarrow
+  from the AWS SDK for pandas managed layer) turns raw JSONL into one Parquet file per source per
+  day under `postings/dt=.../source=.../` in the curated bucket. Re-running a day overwrites it.
+  - validation: records missing an ID, title or description are quarantined with a reason
+    (`quarantine/`); a quality report per partition goes to `quality/`; metrics go to CloudWatch
+    (namespace `SkillsRadar/Curation`); the run fails and alarms if more than 5% are rejected;
+  - dedupe within a day on `dedupe_key`, keeping the latest copy and counting `observed_count`;
+  - salary normalisation to an annual figure with a `salary_basis` (annual, daily, hourly,
+    predicted, unrecognised, implausible). Pay period is inferred from magnitude because the
+    sources do not state it, so treat hourly and daily as heuristic;
+  - email addresses and phone numbers removed from descriptions;
+  - `description_truncated` flag (Adzuna caps at 500 characters, Reed at about 453);
+  - Hacker News location and remote flag parsed from the header line (heuristic).
+  Still to do in this area: cross-source dedupe (title, company, location, description
+  similarity).
 - **Reed enrichment:** fetch full descriptions via `/jobs/{id}` for new Reed IDs only.
 - **Orchestration:** a Step Functions state machine runs ingest, validate, curate and then starts
   the ML pipeline, with retries and failure notifications through SNS.

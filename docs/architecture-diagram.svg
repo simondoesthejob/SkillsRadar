@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 900" width="1540" height="900" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1010" width="1540" height="1010" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif">
 <defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b4656"/></marker></defs>
-<rect width="1540" height="900" fill="#ffffff"/>
-<text x="30" y="42" font-size="22" font-weight="bold" fill="#1b2430" text-anchor="start">Skills Radar: AWS elements and how they connect (phase 1)</text>
+<rect width="1540" height="1010" fill="#ffffff"/>
+<text x="30" y="42" font-size="22" font-weight="bold" fill="#1b2430" text-anchor="start">Skills Radar: AWS elements and how they connect (phase 1, Athena, curation)</text>
 <text x="1510" y="42" font-size="12" font-weight="normal" fill="#4a5565" text-anchor="end">Region eu-west-2</text>
-<rect x="30" y="70" width="220" height="570" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
+<rect x="30" y="70" width="220" height="700" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="44" y="92" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">GitHub</text>
 <rect x="50" y="110" width="180" height="60" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="50" y="110" width="6" height="60" rx="3" fill="#24292f"/>
@@ -24,7 +24,7 @@
 <text x="66" y="381" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Apply workflow</text>
 <text x="66" y="399" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">on push to main</text>
 <text x="66" y="414" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">environment &#x27;dev&#x27;</text>
-<rect x="300" y="70" width="340" height="570" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
+<rect x="300" y="70" width="340" height="700" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="314" y="92" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Bootstrap stack</text>
 <text x="314" y="109" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/bootstrap, applied once from your laptop</text>
 <rect x="320" y="120" width="300" height="66" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
@@ -58,7 +58,7 @@
 <text x="236" y="307" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">OIDC token</text>
 <path d="M 230,395 L 335,395" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
 <text x="236" y="387" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">OIDC token</text>
-<rect x="680" y="70" width="620" height="570" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
+<rect x="680" y="70" width="620" height="700" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="694" y="92" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Dev stack</text>
 <text x="694" y="109" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/envs/dev, applied by CI</text>
 <rect x="800" y="130" width="170" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
@@ -86,10 +86,17 @@
 <rect x="710" y="470" width="150" height="130" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="710" y="470" width="6" height="130" rx="3" fill="#3F8624"/>
 <text x="726" y="491" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">S3 data buckets</text>
-<text x="726" y="509" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">raw (written now)</text>
-<text x="726" y="524" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">curated (later)</text>
-<text x="726" y="539" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">artifacts (later)</text>
+<text x="726" y="509" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">raw (JSONL)</text>
+<text x="726" y="524" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">curated (Parquet)</text>
+<text x="726" y="539" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">artifacts (results)</text>
 <text x="726" y="554" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">versioned, encrypted</text>
+<rect x="1110" y="600" width="150" height="80" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="1110" y="600" width="6" height="80" rx="3" fill="#ED7100"/>
+<text x="1126" y="621" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Lambda: curate</text>
+<text x="1126" y="639" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">validate, dedupe,</text>
+<text x="1126" y="654" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">normalise to Parquet</text>
+<path d="M 1110,640 L 860,560" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1110" y="702" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">reads raw, writes Parquet</text>
 <rect x="910" y="470" width="150" height="80" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="910" y="470" width="6" height="80" rx="3" fill="#C7157B"/>
 <text x="926" y="491" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">CloudWatch Logs</text>
@@ -115,6 +122,25 @@
 <text x="995" y="436" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">logs</text>
 <path d="M 1130,470 L 1052,396" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
 <text x="1112" y="428" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">reads keys</text>
+<rect x="710" y="650" width="150" height="96" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="710" y="650" width="6" height="96" rx="3" fill="#2E73B8"/>
+<text x="726" y="671" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Glue catalog table</text>
+<text x="726" y="689" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">raw + curated tables</text>
+<text x="726" y="704" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">partitions: source, dt</text>
+<text x="726" y="719" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">projected, no crawler</text>
+<rect x="910" y="650" width="150" height="96" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="910" y="650" width="6" height="96" rx="3" fill="#2E73B8"/>
+<text x="926" y="671" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Athena workgroup</text>
+<text x="926" y="689" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">1 GiB scan limit</text>
+<text x="926" y="704" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">results kept 7 days</text>
+<text x="926" y="719" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">8 saved queries</text>
+<path d="M 785,650 L 785,600" fill="none" stroke="#3b4656" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#head)"/>
+<text x="795" y="630" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">describes</text>
+<path d="M 910,698 L 860,698" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="885" y="690" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">schema</text>
+<path d="M 935,650 L 850,600" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="930" y="618" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">reads raw,</text>
+<text x="930" y="630" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">writes results</text>
 <rect x="1340" y="250" width="170" height="200" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="1354" y="272" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">Job data sources</text>
 <text x="1354" y="289" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">outside AWS</text>
@@ -134,57 +160,59 @@
 <text x="1200" y="338" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">HTTPS, rate-limited</text>
 <rect x="1340" y="470" width="170" height="170" rx="12" fill="#FBFBFC" stroke="#A8B0BB" stroke-width="1.5" stroke-dasharray="6 5"/>
 <text x="1354" y="492" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">Planned (later)</text>
-<text x="1355" y="508" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">Glue, Athena</text>
-<text x="1355" y="528" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">Step Functions, SNS</text>
-<text x="1355" y="548" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">SageMaker pipeline</text>
-<text x="1355" y="568" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">API Gateway, Lambda</text>
-<text x="1355" y="588" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">DynamoDB, Cognito</text>
-<text x="1355" y="608" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">CloudFront, S3 (UI)</text>
-<rect x="30" y="690" width="610" height="180" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
-<text x="44" y="712" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Access stack</text>
-<text x="44" y="729" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/iam, applied once by an admin</text>
-<rect x="50" y="735" width="270" height="110" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
-<rect x="50" y="735" width="6" height="110" rx="3" fill="#DD344C"/>
-<text x="66" y="756" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">IAM groups</text>
-<text x="66" y="774" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">skillsradar-bootstrap (temporary)</text>
-<text x="66" y="789" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">skillsradar-operator (day to day)</text>
-<text x="66" y="804" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">no users created here</text>
-<rect x="340" y="735" width="280" height="110" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
-<rect x="340" y="735" width="6" height="110" rx="3" fill="#DD344C"/>
-<text x="356" y="756" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">IAM managed policies</text>
-<text x="356" y="774" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">bootstrap-foundations</text>
-<text x="356" y="789" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">dev-stack, operator</text>
-<text x="356" y="804" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">require-mfa (MFA for all actions)</text>
-<path d="M 340,790 L 320,790" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<rect x="700" y="735" width="300" height="100" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
-<rect x="700" y="735" width="6" height="100" rx="3" fill="#5f6b7a"/>
-<text x="716" y="756" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">You</text>
-<text x="716" y="774" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">IAM user with MFA</text>
-<text x="716" y="789" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">AWS CLI and Terraform</text>
-<text x="716" y="804" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">on your own machine</text>
-<path d="M 700,785 L 640,785" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="670" y="775" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">member of</text>
-<path d="M 1085,735 L 1085,640" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="1095" y="700" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">put-secret-value,</text>
-<text x="1095" y="714" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">lambda invoke</text>
-<rect x="1220" y="700" width="290" height="170" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
-<text x="1234" y="722" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">Key</text>
-<path d="M1240,740 L1290,740" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="1302" y="744" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">call or data flow</text>
-<path d="M1240,764 L1290,764" stroke="#3b4656" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#head)"/>
-<text x="1302" y="768" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">trust or permission</text>
-<rect x="1240" y="782" width="14" height="14" rx="3" fill="#ED7100"/>
-<text x="1262" y="794" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">compute</text>
-<rect x="1380" y="782" width="14" height="14" rx="3" fill="#3F8624"/>
-<text x="1402" y="794" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">storage</text>
-<rect x="1240" y="802" width="14" height="14" rx="3" fill="#DD344C"/>
-<text x="1262" y="814" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">identity and secrets</text>
-<rect x="1380" y="802" width="14" height="14" rx="3" fill="#C7157B"/>
-<text x="1402" y="814" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">monitoring</text>
-<rect x="1240" y="822" width="14" height="14" rx="3" fill="#8C4FFF"/>
-<text x="1262" y="834" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">messaging</text>
-<rect x="1380" y="822" width="14" height="14" rx="3" fill="#24292f"/>
-<text x="1402" y="834" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">GitHub</text>
-<rect x="1240" y="842" width="14" height="14" rx="3" fill="#5f6b7a"/>
-<text x="1262" y="854" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">outside AWS</text>
+<text x="1355" y="508" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">Step Functions, SNS</text>
+<text x="1355" y="528" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">SageMaker pipeline</text>
+<text x="1355" y="548" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">API Gateway, Lambda</text>
+<text x="1355" y="568" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">DynamoDB, Cognito</text>
+<text x="1355" y="588" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">CloudFront, S3 (UI)</text>
+<rect x="30" y="800" width="610" height="180" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
+<text x="44" y="822" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Access stack</text>
+<text x="44" y="839" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/iam, optional, applied once by an admin</text>
+<rect x="50" y="845" width="270" height="110" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="50" y="845" width="6" height="110" rx="3" fill="#DD344C"/>
+<text x="66" y="866" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">IAM groups</text>
+<text x="66" y="884" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">skillsradar-bootstrap (temporary)</text>
+<text x="66" y="899" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">skillsradar-operator (day to day)</text>
+<text x="66" y="914" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">no users created here</text>
+<rect x="340" y="845" width="280" height="110" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="340" y="845" width="6" height="110" rx="3" fill="#DD344C"/>
+<text x="356" y="866" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">IAM managed policies</text>
+<text x="356" y="884" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">foundations, dev-stack, analytics</text>
+<text x="356" y="899" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">operator (incl. Athena queries)</text>
+<text x="356" y="914" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">require-mfa (MFA for all actions)</text>
+<path d="M 340,900 L 320,900" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<rect x="700" y="845" width="300" height="100" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="700" y="845" width="6" height="100" rx="3" fill="#5f6b7a"/>
+<text x="716" y="866" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">You</text>
+<text x="716" y="884" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">IAM user with MFA</text>
+<text x="716" y="899" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">AWS CLI and Terraform</text>
+<text x="716" y="914" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">on your own machine</text>
+<path d="M 700,895 L 640,895" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="670" y="885" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">member of</text>
+<path d="M 1085,845 L 1085,770" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1095" y="800" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">put-secret-value,</text>
+<text x="1095" y="814" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">lambda invoke,</text>
+<text x="1095" y="828" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">Athena queries</text>
+<rect x="1220" y="810" width="290" height="170" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
+<text x="1234" y="832" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">Key</text>
+<path d="M1240,850 L1290,850" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1302" y="854" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">call or data flow</text>
+<path d="M1240,874 L1290,874" stroke="#3b4656" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#head)"/>
+<text x="1302" y="878" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">trust or permission</text>
+<rect x="1240" y="892" width="14" height="14" rx="3" fill="#ED7100"/>
+<text x="1262" y="904" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">compute</text>
+<rect x="1380" y="892" width="14" height="14" rx="3" fill="#3F8624"/>
+<text x="1402" y="904" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">storage</text>
+<rect x="1240" y="912" width="14" height="14" rx="3" fill="#DD344C"/>
+<text x="1262" y="924" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">identity and secrets</text>
+<rect x="1380" y="912" width="14" height="14" rx="3" fill="#C7157B"/>
+<text x="1402" y="924" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">monitoring</text>
+<rect x="1240" y="932" width="14" height="14" rx="3" fill="#8C4FFF"/>
+<text x="1262" y="944" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">messaging</text>
+<rect x="1380" y="932" width="14" height="14" rx="3" fill="#2E73B8"/>
+<text x="1402" y="944" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">analytics</text>
+<rect x="1240" y="952" width="14" height="14" rx="3" fill="#24292f"/>
+<text x="1262" y="964" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">GitHub</text>
+<rect x="1380" y="952" width="14" height="14" rx="3" fill="#5f6b7a"/>
+<text x="1402" y="964" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">outside AWS</text>
 </svg>

@@ -37,7 +37,7 @@ flowchart LR
 | Phase | Scope | State |
 |---|---|---|
 | 1. Foundations | Repo, Terraform state, OIDC, CI, data buckets, ingestion Lambda and schedule | **Running** |
-| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | **In progress**: Glue table and Athena workgroup over the raw data are built; curation job, Reed enrichment and Step Functions are next |
+| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | **In progress**: Glue table and Athena workgroup over the raw data are built; curation Lambda (Parquet, validation, salary normalisation) is built; Reed enrichment, cross-source dedupe and Step Functions are next |
 | 3. ML | Evaluated skill extraction, emerging-skill detection, momentum forecasts, personalised gap engine, SageMaker Pipelines and Model Registry | |
 | 4. Serving and UI | Endpoint, API Gateway, React front end on CloudFront, methodology page | |
 | 5. Monitoring | Model Monitor, vocabulary drift, retraining triggers, dashboards, budgets and alarms | |

@@ -10,9 +10,8 @@ DEFAULT_QUERIES = (
     "data scientist",
     "machine learning engineer",
     "data engineer",
-    "software engineer",
-    "senior software engineer",
-    "data journalist",
+    "software engineer python",
+    "mlops",
 )
 
 

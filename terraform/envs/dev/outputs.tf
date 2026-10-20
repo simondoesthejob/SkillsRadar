@@ -21,3 +21,7 @@ output "athena_workgroup" {
 output "athena_database" {
   value = module.analytics.database_name
 }
+
+output "curate_function_name" {
+  value = module.curate.function_name
+}
