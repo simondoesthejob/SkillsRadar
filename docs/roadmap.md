@@ -21,8 +21,10 @@ it as a development dataset, not as UK evidence).
 
 ## Phase 2: Data (Glue, Athena, Step Functions)
 
-- **Catalog and query:** Glue Data Catalog tables defined in Terraform (partition projection on
-  `source` and `dt`), an Athena workgroup with a scan limit and its own results bucket.
+- **Catalog and query (built):** a Glue database and table defined in Terraform
+  (`terraform/modules/analytics`, partition projection on `source` and `dt`), an Athena
+  workgroup with a scan limit and results in the artifacts bucket, and five saved example
+  queries in `terraform/modules/analytics/queries/`.
 - **Curation job** (Glue job or Lambda, whichever is simpler for the volume): writes Parquet to the
   curated bucket, partitioned by date. It does:
   - schema validation (Pandera or Great Expectations), with metrics sent to CloudWatch;

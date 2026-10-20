@@ -6,7 +6,7 @@ Two groups are defined in `terraform/modules/iam_groups` and created by the stac
 | Group | Purpose | Lifetime |
 |---|---|---|
 | `skillsradar-bootstrap` | Run `terraform/bootstrap` (state bucket, GitHub OIDC roles) and, optionally, `terraform/envs/dev` from a laptop | Temporary: remove members once CI deploys |
-| `skillsradar-operator` | Store API keys, invoke the ingest function, read data, logs and the dead-letter queue | Standing |
+| `skillsradar-operator` | Store API keys, invoke the ingest function, read data, logs and the dead-letter queue, run Athena queries in the environment workgroups | Standing |
 
 Both groups also get a `require-mfa` policy (set `require_mfa = false` to omit it).
 

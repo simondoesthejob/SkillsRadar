@@ -36,8 +36,8 @@ flowchart LR
 
 | Phase | Scope | State |
 |---|---|---|
-| 1. Foundations | Repo, Terraform state, OIDC, CI, data buckets, ingestion Lambda and schedule | **Scaffolded** |
-| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | Next |
+| 1. Foundations | Repo, Terraform state, OIDC, CI, data buckets, ingestion Lambda and schedule | **Running** |
+| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | **In progress**: Glue table and Athena workgroup over the raw data are built; curation job, Reed enrichment and Step Functions are next |
 | 3. ML | Evaluated skill extraction, emerging-skill detection, momentum forecasts, personalised gap engine, SageMaker Pipelines and Model Registry | |
 | 4. Serving and UI | Endpoint, API Gateway, React front end on CloudFront, methodology page | |
 | 5. Monitoring | Model Monitor, vocabulary drift, retraining triggers, dashboards, budgets and alarms | |
@@ -58,8 +58,13 @@ The detailed plan, evaluation approach, MVP cut lines and risks are in [roadmap.
   full text per job is left to a phase 2 step that only fetches postings not seen before, which
   keeps API usage low.
 - **Hive-partitioned raw layout** (`source=/dt=`) so Athena can prune partitions cheaply.
+- **Partition projection instead of a crawler.** The Glue table over the raw files declares its
+  `source` and `dt` partitions as rules (an enum and a date range ending at `NOW`), so new days
+  are queryable the moment the Lambda writes them, with no crawler to run or pay for.
+- **Athena cost guard.** The workgroup enforces its own settings, cancels any query that would
+  scan more than 1 GiB, and keeps encrypted results for 7 days in the artifacts bucket.
 - **Idempotent downstream.** Re-runs can duplicate rows; every record carries a `dedupe_key`.
 - **OIDC, not access keys.** The plan role is read-only and assumable from pull requests; the
   apply role is assumable only from jobs in the `dev` GitHub environment.
-- **Scheduler disabled by default** until the API secret exists, so a first deploy cannot fail
-  on missing credentials.
+- **Scheduler disabled by default** until the API secrets exist, so a first deploy cannot fail
+  on missing credentials. Turn it on with `ingest_schedule_enabled`.

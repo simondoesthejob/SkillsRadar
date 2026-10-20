@@ -21,6 +21,10 @@ locals {
     "arn:aws:s3:::${var.name_prefix}-*/*",
   ]
   project_role_arn = "arn:aws:iam::${local.account_id}:role/${var.name_prefix}-*"
+
+  // Glue database names use underscores (skillsradar_dev), not hyphens.
+  glue_env_names = [for prefix in local.env_prefixes : replace(prefix, "-", "_")]
+  glue_prefix    = replace(var.name_prefix, "-", "_")
 }
 
 resource "aws_iam_group" "bootstrap" {
@@ -206,6 +210,61 @@ data "aws_iam_policy_document" "dev_stack" {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Bootstrap group, policy 3: the Glue and Athena resources in modules/analytics (laptop applies).
+// ---------------------------------------------------------------------------------------------
+
+data "aws_iam_policy_document" "bootstrap_analytics" {
+  statement {
+    sid = "GlueDatabaseAndTables"
+    actions = [
+      "glue:CreateDatabase",
+      "glue:CreateTable",
+      "glue:DeleteDatabase",
+      "glue:DeleteTable",
+      "glue:GetDatabase",
+      "glue:GetTable",
+      "glue:GetTags",
+      "glue:TagResource",
+      "glue:UntagResource",
+      "glue:UpdateDatabase",
+      "glue:UpdateTable",
+    ]
+    resources = [
+      "arn:aws:glue:${local.region_acc}:catalog",
+      "arn:aws:glue:${local.region_acc}:database/${local.glue_prefix}_*",
+      "arn:aws:glue:${local.region_acc}:table/${local.glue_prefix}_*/*",
+    ]
+  }
+
+  statement {
+    sid = "AthenaWorkgroups"
+    actions = [
+      "athena:CreateWorkGroup",
+      "athena:DeleteWorkGroup",
+      "athena:GetWorkGroup",
+      "athena:ListTagsForResource",
+      "athena:TagResource",
+      "athena:UntagResource",
+      "athena:UpdateWorkGroup",
+    ]
+    resources = ["arn:aws:athena:${local.region_acc}:workgroup/${var.name_prefix}-*"]
+  }
+
+  // Named queries cannot be limited by resource name.
+  statement {
+    sid = "AthenaNamedQueries"
+    actions = [
+      "athena:BatchGetNamedQuery",
+      "athena:CreateNamedQuery",
+      "athena:DeleteNamedQuery",
+      "athena:GetNamedQuery",
+      "athena:ListNamedQueries",
+    ]
+    resources = ["*"]
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Operator group: day-to-day use once CI owns deployments. No access to Terraform state.
 // ---------------------------------------------------------------------------------------------
 
@@ -265,6 +324,54 @@ data "aws_iam_policy_document" "operator" {
     sid       = "FindLogGroups"
     actions   = ["logs:DescribeLogGroups"]
     resources = ["*"]
+  }
+
+  // Run Athena queries in the environment workgroups and read the catalog. Results are written
+  // to the artifacts bucket under athena-results/.
+  statement {
+    sid = "RunAthenaQueries"
+    actions = [
+      "athena:BatchGetNamedQuery",
+      "athena:GetNamedQuery",
+      "athena:GetQueryExecution",
+      "athena:GetQueryResults",
+      "athena:GetWorkGroup",
+      "athena:ListNamedQueries",
+      "athena:ListQueryExecutions",
+      "athena:StartQueryExecution",
+      "athena:StopQueryExecution",
+    ]
+    resources = [
+      for prefix in local.env_prefixes : "arn:aws:athena:${local.region_acc}:workgroup/${prefix}"
+    ]
+  }
+
+  statement {
+    sid = "ReadGlueCatalog"
+    actions = [
+      "glue:GetDatabase",
+      "glue:GetPartition",
+      "glue:GetPartitions",
+      "glue:GetTable",
+      "glue:GetTables",
+    ]
+    resources = flatten([
+      "arn:aws:glue:${local.region_acc}:catalog",
+      [for name in local.glue_env_names : "arn:aws:glue:${local.region_acc}:database/${name}"],
+      [for name in local.glue_env_names : "arn:aws:glue:${local.region_acc}:table/${name}/*"],
+    ])
+  }
+
+  statement {
+    sid = "WriteAthenaResults"
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:ListMultipartUploadParts",
+      "s3:PutObject",
+    ]
+    resources = [
+      for prefix in local.env_prefixes : "arn:aws:s3:::${prefix}-artifacts-*/athena-results/*"
+    ]
   }
 }
 
@@ -338,6 +445,12 @@ resource "aws_iam_policy" "dev_stack" {
   policy      = data.aws_iam_policy_document.dev_stack.json
 }
 
+resource "aws_iam_policy" "bootstrap_analytics" {
+  name        = "${var.name_prefix}-bootstrap-analytics"
+  description = "Create and manage the Glue and Athena resources in modules/analytics."
+  policy      = data.aws_iam_policy_document.bootstrap_analytics.json
+}
+
 resource "aws_iam_policy" "operator" {
   name        = "${var.name_prefix}-operator"
   description = "Store API keys, invoke ingestion, read data, logs and the dead-letter queue."
@@ -360,6 +473,11 @@ resource "aws_iam_group_policy_attachment" "bootstrap_foundations" {
 resource "aws_iam_group_policy_attachment" "bootstrap_dev_stack" {
   group      = aws_iam_group.bootstrap.name
   policy_arn = aws_iam_policy.dev_stack.arn
+}
+
+resource "aws_iam_group_policy_attachment" "bootstrap_analytics" {
+  group      = aws_iam_group.bootstrap.name
+  policy_arn = aws_iam_policy.bootstrap_analytics.arn
 }
 
 resource "aws_iam_group_policy_attachment" "operator" {

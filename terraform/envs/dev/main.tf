@@ -39,6 +39,14 @@ module "ingest" {
   raw_bucket_name = module.data.bucket_names["raw"]
   raw_bucket_arn  = module.data.bucket_arns["raw"]
 
-  // Flip to true after storing the Adzuna and Reed credentials (see README, "First deployment") .
+  // Flip to true after storing the Adzuna and Reed credentials (see README, "First deployment").
   schedule_enabled = var.ingest_schedule_enabled
+}
+
+module "analytics" {
+  source = "../../modules/analytics"
+
+  name_prefix         = local.name_prefix
+  raw_bucket_name     = module.data.bucket_names["raw"]
+  results_bucket_name = module.data.bucket_names["artifacts"]
 }

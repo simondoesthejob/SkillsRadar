@@ -66,4 +66,22 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       noncurrent_days = 30
     }
   }
+
+  // Athena query results are disposable: expire them after a week (artifacts bucket only).
+  dynamic "rule" {
+    for_each = each.key == "artifacts" ? [1] : []
+
+    content {
+      id     = "athena-results"
+      status = "Enabled"
+
+      filter {
+        prefix = "athena-results/"
+      }
+
+      expiration {
+        days = 7
+      }
+    }
+  }
 }

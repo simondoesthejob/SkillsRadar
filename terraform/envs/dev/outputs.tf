@@ -13,3 +13,11 @@ output "adzuna_secret_arn" {
 output "reed_secret_arn" {
   value = module.ingest.reed_secret_arn
 }
+
+output "athena_workgroup" {
+  value = module.analytics.workgroup_name
+}
+
+output "athena_database" {
+  value = module.analytics.database_name
+}

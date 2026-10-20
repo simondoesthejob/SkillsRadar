@@ -71,18 +71,22 @@ then `init -backend=false` and `validate` in each of the three root stacks.
   variable `AWS_APPLY_ROLE_ARN`.
 
 ## Status
-Phase 1 (foundations and ingestion) is being deployed.
-- Python: 24 tests pass and ruff is clean. The Reed source has not run against the live API yet.
-- Terraform: the sandbox that wrote it had no Terraform binary, so it was never validated locally.
-  CI is the first real check. The IAM policies in `iam_groups` are also untested against live AWS,
-  so expect small fixes (for example Secrets Manager or IAM scoping errors).
-- Bootstrap has been applied. The last known CI problem was a "Duplicate provider configuration"
-  error from stale uncommitted `main.tf` and `ci.yml` on GitHub; confirm it is resolved.
-- Next: store the API keys, test each source with `aws lambda invoke`, then enable the ingest
-  schedule (`ingest_schedule_enabled = true`) as early as possible, because forecasting needs months
-  of history.
-- Later: phase 2 (Glue, Athena, curated layer, Step Functions, Reed enrichment, cross-source dedupe),
-  then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progress.
+- Python: 24 tests pass and ruff is clean.
+- Terraform: CI runs `fmt` and `validate`; the apply workflow deploys `envs/dev` through GitHub OIDC.
+  The IAM policies in `iam_groups` are best-effort and were never tested against live AWS, so expect
+  the odd AccessDenied to need one more action.
+- The GitHub OIDC `sub` claim for this repo is ID-qualified (`owner@id/name@id`), so the bootstrap's
+  `github_repo` variable must use that form.
+- Done: keys stored, each source tested, daily schedule enabled and confirmed working.
+- Phase 2 step 1 built, not yet applied: `terraform/modules/analytics` (Glue database and table with
+  partition projection, Athena workgroup with a 1 GiB scan cap, five saved queries in
+  `terraform/modules/analytics/queries/`). Needs a push to main (CI apply) and a one-off re-apply of
+  `terraform/iam` so the operator group can run Athena queries.
+- Next: curation job (Parquet, validation, dedupe, salary normalisation), Reed enrichment, Step
+  Functions; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+- Terraform formatting can be checked here with OpenTofu (`tofu fmt`); providers cannot be fetched
+  in the sandbox, so `validate` only runs in CI.
 
 ## Known follow-ups
 - The apply role has `AdministratorAccess`; tighten it to least privilege.

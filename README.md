@@ -24,8 +24,9 @@ for the design, [docs/roadmap.md](docs/roadmap.md) for phases 2 to 5, and
 | `tests/` | Unit tests; no network or AWS access needed |
 | `terraform/iam/` | One-off access stack: bootstrap and operator IAM groups (applied locally by an admin, before the bootstrap) |
 | `terraform/bootstrap/` | One-off stack: remote-state bucket and GitHub OIDC roles (applied locally) |
-| `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm |
-| `terraform/modules/` | `data`, `ingest`, `github_oidc`, `iam_groups` modules |
+| `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm, Glue table and Athena workgroup |
+| `terraform/modules/` | `data`, `ingest`, `analytics`, `github_oidc`, `iam_groups` modules |
+| `terraform/modules/analytics/queries/` | Example Athena queries (saved in the workgroup by Terraform) |
 | `scripts/aws_cli_walkthrough.sh` | Learning aid: the same AWS resources built with plain AWS CLI calls (`DRY_RUN=1` prints them without calling AWS). Not a deployment path |
 | `.github/workflows/` | CI (lint, tests, `terraform fmt/validate`), plan on pull request, apply on merge |
 
@@ -99,6 +100,27 @@ variable, so use the `AWS_PROFILE` environment variable if you use profiles.
    Turn the schedule on as early as you can: the forecasting work needs months of history, and
    history only accumulates while the pipeline is running.
 
+## Querying the data with Athena
+
+The `analytics` module creates a Glue database (`skillsradar_dev`), a table over the raw files
+(`raw_postings`) and an Athena workgroup (`skillsradar-dev`) that cancels any query scanning more
+than 1 GiB. New days appear automatically; there is no crawler.
+
+1. In the Athena console, select the workgroup `skillsradar-dev` and database `skillsradar_dev`.
+   The example queries are under **Saved queries**.
+2. Or from the CLI:
+   ```bash
+   aws athena start-query-execution --region eu-west-2 --work-group skillsradar-dev \
+     --query-execution-context Database=skillsradar_dev \
+     --query-string "SELECT source, dt, count(*) AS postings FROM raw_postings GROUP BY 1, 2 ORDER BY 2 DESC, 1"
+   aws athena get-query-results --region eu-west-2 --query-execution-id <id from the output>
+   ```
+3. If you were already using the `skillsradar-operator` group, re-apply `terraform/iam` once (as an
+   admin) so it gains the Athena and Glue permissions.
+
+The `projection_start_date` setting of the `analytics` module (default 2026-10-01) must be on or
+before your first ingestion date, or Athena will not look at the earlier days.
+
 ## Cost
 
 At this stage the cost is pennies a month: one small Lambda run a day, a few MB in S3, and one
@@ -109,6 +131,7 @@ serverless inference or batch transform, plus tearing down non-production resour
 
 The Python code passes `ruff` and 24 unit tests (all offline, with fake HTTP and AWS clients).
 The Reed source has not been run against the live API yet, and its date format (day-first) is
-handled defensively because Reed's documentation does not specify one. The Terraform has **not yet been through
-`terraform validate`** (no Terraform binary was available where it was written), so CI will be the
-first check. Expect to fix small syntax or provider-version issues on the first run.
+handled defensively because Reed's documentation does not specify one. The Terraform was formatted and parsed with
+OpenTofu where it was written, but the providers could not be downloaded there, so the AWS-side
+checks (`terraform validate` and the plan) happen in CI and on first apply. The Glue and Athena
+module has not yet been applied to a live account.
