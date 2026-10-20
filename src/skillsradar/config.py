@@ -12,7 +12,7 @@ DEFAULT_QUERIES = (
     "data engineer",
     "software engineer",
     "senior software engineer",
-    "data journalist"
+    "data journalist",
 )
 
 
