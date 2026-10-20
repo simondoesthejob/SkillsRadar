@@ -26,6 +26,7 @@ for the design, [docs/roadmap.md](docs/roadmap.md) for phases 2 to 5, and
 | `terraform/bootstrap/` | One-off stack: remote-state bucket and GitHub OIDC roles (applied locally) |
 | `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm |
 | `terraform/modules/` | `data`, `ingest`, `github_oidc`, `iam_groups` modules |
+| `scripts/aws_cli_walkthrough.sh` | Learning aid: the same AWS resources built with plain AWS CLI calls (`DRY_RUN=1` prints them without calling AWS). Not a deployment path |
 | `.github/workflows/` | CI (lint, tests, `terraform fmt/validate`), plan on pull request, apply on merge |
 
 ## Local development
