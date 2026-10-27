@@ -20,6 +20,9 @@ _NOT_PLACE = re.compile(
     # several roles or a vague scope rather than a place
     r"\b(?:multiple|various|several|many|roles?|positions?|openings?|vacanc\w+|listed|worldwide|"
     r"global|anywhere)\b|"
+    # work arrangement, eligibility and domain names
+    r"\bhybrid\b|\bcitizen\w*|\brequired\b|\beligib\w+|\bauthori[sz]\w+|\bsponsor\w*|"
+    r"\bclearance\b|\.(?:com|io|ai|co|org|net|dev|app|uk|us|xyz)\b|"
     # time zones
     r"\btime\s?zones?\b|\btime\b|\b(?:gmt|utc|cet|cest|eet|bst|[ecmp][sd]t)\b|"
     # teams, products and technologies
