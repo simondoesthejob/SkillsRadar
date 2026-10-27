@@ -16,7 +16,15 @@ _REMOTE_PLACE = re.compile(r"\(([^)]+)\)")
 _ONSITE = re.compile(r"^(?:on[- ]?site|in[- ]office|office)\b", re.IGNORECASE)
 _NOT_PLACE = re.compile(
     r"(?:\bvisa\b|\brelocat|full[- ]?time|part[- ]?time|\bcontract\b|\bintern|\bequity\b|"
-    r"\bhiring\b|https?://|www\.|[£$€]|\d+\s?k\b|\d{4,})",
+    r"\bhiring\b|https?://|www\.|[£$€]|\d|[&/+@]|"
+    # several roles or a vague scope rather than a place
+    r"\b(?:multiple|various|several|many|roles?|positions?|openings?|vacanc\w+|listed|worldwide|"
+    r"global|anywhere)\b|"
+    # time zones
+    r"\btime\s?zones?\b|\btime\b|\b(?:gmt|utc|cet|cest|eet|bst|[ecmp][sd]t)\b|"
+    # teams, products and technologies
+    r"\b(?:tooling|platform|infrastructure|devex|genai|ai|ml|team|engineering|software|"
+    r"product|data|security)\b)",
     re.IGNORECASE,
 )
 _ROLE = re.compile(
@@ -26,6 +34,15 @@ _ROLE = re.compile(
 )
 _MAX_PLACE_CHARS = 60
 _MAX_PLACE_WORDS = 6
+
+
+def _looks_like_place(segment: str) -> bool:
+    return (
+        len(segment) <= _MAX_PLACE_CHARS
+        and len(segment.split()) <= _MAX_PLACE_WORDS
+        and not _NOT_PLACE.search(segment)
+        and not _ROLE.search(segment)
+    )
 
 
 def parse_header(first_line: str) -> tuple[str | None, bool | None]:
@@ -42,7 +59,9 @@ def parse_header(first_line: str) -> tuple[str | None, bool | None]:
             remote = True
             place = _REMOTE_PLACE.search(match.group("rest"))
             if place and location is None:
-                location = place.group(1).strip() or None
+                candidate = place.group(1).strip()
+                if candidate and _looks_like_place(candidate):
+                    location = candidate
             continue
         if _ONSITE.match(segment):
             if remote is None:
@@ -50,11 +69,6 @@ def parse_header(first_line: str) -> tuple[str | None, bool | None]:
             continue
         if location is not None:
             continue
-        if (
-            len(segment) <= _MAX_PLACE_CHARS
-            and len(segment.split()) <= _MAX_PLACE_WORDS
-            and not _NOT_PLACE.search(segment)
-            and not _ROLE.search(segment)
-        ):
+        if _looks_like_place(segment):
             location = segment
     return location, remote
