@@ -32,9 +32,10 @@ it as a development dataset, not as UK evidence).
     (`quarantine/`); a quality report per partition goes to `quality/`; metrics go to CloudWatch
     (namespace `SkillsRadar/Curation`); the run fails and alarms if more than 5% are rejected;
   - dedupe within a day on `dedupe_key`, keeping the latest copy and counting `observed_count`;
-  - salary normalisation to an annual figure with a `salary_basis` (annual, daily, hourly,
-    predicted, unrecognised, implausible). Pay period is inferred from magnitude because the
-    sources do not state it, so treat hourly and daily as heuristic;
+  - salary normalisation to an annual figure with a `salary_basis`. Where Reed's detail states the
+    pay period (`salaryType`) it is used and recorded as `annual_reported`, `daily_reported`,
+    `hourly_reported` and so on; otherwise the period is inferred from magnitude (`daily_inferred`,
+    `hourly_inferred`), which is a heuristic. Also `predicted`, `unrecognised` and `implausible`;
   - email addresses and phone numbers removed from descriptions;
   - `description_truncated` flag (Adzuna caps at 500 characters, Reed at about 453);
   - Hacker News location and remote flag parsed from the header line (heuristic).

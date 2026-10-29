@@ -153,3 +153,28 @@ def test_enriched_description_still_has_contact_details_removed():
     assert "jobs@agency.example" not in result.rows[0]["description"]
     assert result.stats["emails_removed"] == 1
     assert result.stats["phones_removed"] == 1
+
+
+def test_reed_detail_salary_type_sets_the_period():
+    detail = {"jobDescription": "<p>x</p>", "salaryType": "per day"}
+    result = curate_day([raw(salary_min=450.0, salary_max=600.0)], "reed", NOW, {"1": detail})
+    row = result.rows[0]
+    assert row["salary_basis"] == "daily_reported"
+    assert row["salary_annual_min"] == 450 * 230
+    assert result.stats["salary_basis_daily_reported"] == 1
+    assert result.stats["salary_type_per_day"] == 1
+
+
+def test_conflicting_salary_type_falls_back_to_inference_and_is_counted():
+    detail = {"jobDescription": "<p>x</p>", "salaryType": "per annum"}
+    result = curate_day([raw(salary_min=45.0, salary_max=60.0)], "reed", NOW, {"1": detail})
+    assert result.rows[0]["salary_basis"] == "hourly_inferred"
+    assert result.stats["salary_period_conflict"] == 1
+
+
+def test_unknown_salary_type_is_recorded_but_not_used():
+    detail = {"jobDescription": "<p>x</p>", "salaryType": "Competitive"}
+    result = curate_day([raw(salary_min=450.0, salary_max=600.0)], "reed", NOW, {"1": detail})
+    assert result.rows[0]["salary_basis"] == "daily_inferred"
+    assert result.stats["salary_type_competitive"] == 1
+    assert "salary_period_conflict" not in result.stats

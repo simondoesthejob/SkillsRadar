@@ -85,7 +85,7 @@ Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progr
   `terraform/iam` so the operator group can run Athena queries.
 - Phase 2 step 2 (deployed, working; HN location filter still being tuned): `src/skillsradar/curate/` + `terraform/modules/curate`
   (Lambda with AWS SDK for pandas layer for pyarrow) + `curated_postings` table and three saved queries.
-  Invoke with `{"all": true}` to backfill. Heuristics: salary period inferred from magnitude;
+  Invoke with `{"all": true}` to backfill. Heuristics: salary period inferred from magnitude, except Reed postings with a cached detail, which use its `salaryType` (`*_reported` basis);
   truncation limits adzuna 500 / reed 450; HN location parsed from header line.
 - Phase 2 step 3 built, not yet deployed: `src/skillsradar/enrich/` + `terraform/modules/enrich`. Fetches
   Reed `/jobs/{id}` once per new ID into `enriched/reed/<id>.json.gz` in the raw bucket; curate uses it

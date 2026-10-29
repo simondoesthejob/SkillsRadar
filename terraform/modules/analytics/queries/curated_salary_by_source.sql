@@ -1,5 +1,6 @@
--- Advertised annual salary by source and inferred pay period. Predicted salaries (Adzuna's own
--- estimates) are excluded. A posting that stays advertised for days is counted once: the
+-- Advertised annual salary by source and salary_basis (annual_reported and daily_reported come
+-- from the source's own pay period; daily_inferred and hourly_inferred are guessed from size).
+-- Predicted salaries (Adzuna's own estimates) are excluded. A posting that stays advertised for days is counted once: the
 -- ROW_NUMBER keeps only its most recent day.
 WITH latest AS (
   SELECT

@@ -29,7 +29,7 @@ Cross-source matching on normalised title, company and location is done in the c
 
 Salary values are stored as the sources give them. Reed's detail endpoint exposes a salary type
 (hourly, daily, annual and so on), and Adzuna's estimates can be predicted rather than
-advertised (`salary_predicted`). Normalisation to an annual figure is done by the curation Lambda (`salary_basis` records how; the pay period is inferred from magnitude, so hourly and daily rates are a heuristic).
+advertised (`salary_predicted`). Normalisation to an annual figure is done by the curation Lambda. `salary_basis` records how: Reed's detail states the pay period (`salaryType`), giving `*_reported` values; everywhere else the period is inferred from the size of the number (`*_inferred`), which is a heuristic. Adzuna has no period, so its non-predicted salaries are always inferred.
 
 ## What the public UI may show
 

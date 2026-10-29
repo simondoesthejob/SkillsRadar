@@ -9,6 +9,7 @@ step.
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
@@ -61,7 +62,14 @@ def _curate_one(
 
     low, high = record.get("salary_min"), record.get("salary_max")
     predicted = bool(record.get("salary_predicted"))
-    annual_low, annual_high, basis = salary.normalise_salary(low, high, predicted)
+    period = None
+    if detail and not detail.get("gone") and detail.get("salaryType"):
+        slug = re.sub(r"[^a-z0-9]+", "_", str(detail["salaryType"]).lower()).strip("_")
+        counts[f"salary_type_{slug}"] += 1
+        period = salary.parse_period(str(detail["salaryType"]))
+    annual_low, annual_high, basis = salary.normalise_salary(low, high, predicted, period)
+    if period and basis and not basis.endswith("_reported") and basis != "predicted":
+        counts["salary_period_conflict"] += 1  # stated period did not fit the figures
     if low is not None and high is not None and low > high:
         counts["salary_range_swapped"] += 1
     if basis:
