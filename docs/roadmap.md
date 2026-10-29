@@ -45,8 +45,10 @@ it as a development dataset, not as UK evidence).
   `/jobs/{id}` for new Reed IDs only and caches them in `enriched/reed/` in the raw bucket; curation
   uses them. The detail response has not been checked against the live API; the Lambda reports the
   fields it receives.
-- **Orchestration:** a Step Functions state machine runs ingest, validate, curate and then starts
-  the ML pipeline, with retries and failure notifications through SNS.
+- **Orchestration (built, not yet deployed):** a Step Functions state machine
+  (`terraform/modules/orchestrate`) runs ingest, enrich and curate daily, started by EventBridge
+  Scheduler, with retries on transient Lambda errors and failure emails through SNS. Later it will
+  also start the ML pipeline.
 - **Report:** cross-source match rate and per-source coverage, written as a small dataset the UI
   can display.
 

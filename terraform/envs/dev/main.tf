@@ -53,6 +53,17 @@ module "enrich" {
   reed_secret_arn = module.ingest.reed_secret_arn
 }
 
+module "orchestrate" {
+  source = "../../modules/orchestrate"
+
+  name_prefix         = local.name_prefix
+  ingest_function_arn = module.ingest.function_arn
+  enrich_function_arn = module.enrich.function_arn
+  curate_function_arn = module.curate.function_arn
+  schedule_enabled    = var.pipeline_schedule_enabled
+  alert_email         = var.alert_email
+}
+
 module "analytics" {
   source = "../../modules/analytics"
 

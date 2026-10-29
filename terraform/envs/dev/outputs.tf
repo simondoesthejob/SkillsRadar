@@ -29,3 +29,11 @@ output "curate_function_name" {
 output "enrich_function_name" {
   value = module.enrich.function_name
 }
+
+output "pipeline_state_machine_arn" {
+  value = module.orchestrate.state_machine_arn
+}
+
+output "alerts_topic_arn" {
+  value = module.orchestrate.alerts_topic_arn
+}

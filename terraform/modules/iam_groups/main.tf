@@ -132,8 +132,41 @@ data "aws_iam_policy_document" "dev_stack" {
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
-      values   = ["lambda.amazonaws.com", "scheduler.amazonaws.com"]
+      values   = ["lambda.amazonaws.com", "scheduler.amazonaws.com", "states.amazonaws.com"]
     }
+  }
+
+  statement {
+    sid = "PipelineStateMachine"
+    actions = [
+      "states:CreateStateMachine",
+      "states:DeleteStateMachine",
+      "states:DescribeStateMachine",
+      "states:ListStateMachineVersions",
+      "states:ListTagsForResource",
+      "states:TagResource",
+      "states:UntagResource",
+      "states:UpdateStateMachine",
+    ]
+    resources = ["arn:aws:states:${local.region_acc}:stateMachine:${var.name_prefix}-*"]
+  }
+
+  statement {
+    sid = "AlertsTopic"
+    actions = [
+      "sns:CreateTopic",
+      "sns:DeleteTopic",
+      "sns:GetSubscriptionAttributes",
+      "sns:GetTopicAttributes",
+      "sns:ListSubscriptionsByTopic",
+      "sns:ListTagsForResource",
+      "sns:SetTopicAttributes",
+      "sns:Subscribe",
+      "sns:TagResource",
+      "sns:Unsubscribe",
+      "sns:UntagResource",
+    ]
+    resources = ["arn:aws:sns:${local.region_acc}:${var.name_prefix}-*"]
   }
 
   statement {
@@ -335,6 +368,22 @@ data "aws_iam_policy_document" "operator" {
 
   // Run Athena queries in the environment workgroups and read the catalog. Results are written
   // to the artifacts bucket under athena-results/.
+  // Start and inspect pipeline runs by hand.
+  statement {
+    sid = "RunPipeline"
+    actions = [
+      "states:DescribeExecution",
+      "states:GetExecutionHistory",
+      "states:ListExecutions",
+      "states:StartExecution",
+      "states:StopExecution",
+    ]
+    resources = flatten([
+      [for prefix in local.env_prefixes : "arn:aws:states:${local.region_acc}:stateMachine:${prefix}-pipeline"],
+      [for prefix in local.env_prefixes : "arn:aws:states:${local.region_acc}:execution:${prefix}-pipeline:*"],
+    ])
+  }
+
   statement {
     sid = "RunAthenaQueries"
     actions = [

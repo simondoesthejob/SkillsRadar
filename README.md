@@ -24,8 +24,8 @@ for the design, [docs/roadmap.md](docs/roadmap.md) for phases 2 to 5, and
 | `tests/` | Unit tests; no network or AWS access needed |
 | `terraform/iam/` | One-off access stack: bootstrap and operator IAM groups (applied locally by an admin, before the bootstrap) |
 | `terraform/bootstrap/` | One-off stack: remote-state bucket and GitHub OIDC roles (applied locally) |
-| `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm, curation Lambda, Glue tables and Athena workgroup |
-| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `analytics`, `github_oidc`, `iam_groups` modules |
+| `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm, enrichment and curation Lambdas, Step Functions pipeline with SNS alerts, Glue tables and Athena workgroup |
+| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `orchestrate`, `analytics`, `github_oidc`, `iam_groups` modules |
 | `terraform/modules/analytics/queries/` | Example Athena queries (saved in the workgroup by Terraform) |
 | `scripts/aws_cli_walkthrough.sh` | Learning aid: the same AWS resources built with plain AWS CLI calls (`DRY_RUN=1` prints them without calling AWS). Not a deployment path |
 | `.github/workflows/` | CI (lint, tests, `terraform fmt/validate`), plan on pull request, apply on merge |
@@ -89,15 +89,15 @@ variable, so use the `AWS_PROFILE` environment variable if you use profiles.
      --secret-id skillsradar-dev/reed \
      --secret-string '{"api_key":"<key>"}'
    ```
-7. **Test each source on its own**, then enable the schedule by setting
-   `ingest_schedule_enabled = true` in `terraform/envs/dev/variables.tf`:
+7. **Test each source on its own** (the daily schedule is covered under "Running the pipeline"
+   below):
    ```bash
    aws lambda invoke --function-name skillsradar-dev-ingest \
      --payload '{"sources":["reed"]}' --cli-binary-format raw-in-base64-out out.json
    ```
    Valid source names are `adzuna`, `reed` and `hn_hiring`; with no payload, all three run.
 
-   Turn the schedule on as early as you can: the forecasting work needs months of history, and
+   Turn the daily run on as early as you can: the forecasting work needs months of history, and
    history only accumulates while the pipeline is running.
 
 ## Querying the data with Athena
@@ -147,8 +147,8 @@ worth a look, because the detail response has not been checked against the live 
 ## Curating the data
 
 The `curate` Lambda (`skillsradar-dev-curate`) reads the raw JSONL and writes clean Parquet to the
-curated bucket, one file per source per day. It is run by hand for now; Step Functions will call it
-after ingestion later. `curated_postings` in Athena reads its output.
+curated bucket, one file per source per day. The daily pipeline runs it after enrichment; you can also run it by hand
+(below). `curated_postings` in Athena reads its output.
 
 ```bash
 # backfill every day and source found in the raw bucket
@@ -164,6 +164,33 @@ quality report in `quality/` in the curated bucket. Three saved queries cover th
 The Lambda uses the AWS SDK for pandas managed layer; if a deploy complains about the layer, set
 `pandas_layer_arn` in `terraform/envs/dev/variables.tf` to the current Python 3.12 x86_64 ARN for
 eu-west-2 from that project's documentation.
+
+## Running the pipeline
+
+A Step Functions state machine (`skillsradar-dev-pipeline`) runs the three Lambdas in order every
+day at 06:00 London time: **ingest, then enrich Reed descriptions, then curate** today's data. A
+failure in any step sends an email through the SNS topic `skillsradar-dev-pipeline-alerts`. If ingest
+or enrich fails, the run carries on with what it has (and still emails); if curate fails, the run
+ends as FAILED.
+
+One-off setup:
+
+1. Add a **repository variable** `ALERT_EMAIL` in GitHub (Settings, Secrets and variables, Actions,
+   Variables). It keeps your address out of the code. Push to `main` so CI applies it.
+2. AWS sends a "Confirm subscription" email to that address. Click the link once, or you will get
+   no alerts.
+3. Run it once by hand to check it, then watch it in the Step Functions console:
+   ```bash
+   aws stepfunctions start-execution --region eu-west-2 \
+     --state-machine-arn arn:aws:states:eu-west-2:<account>:stateMachine:skillsradar-dev-pipeline
+   ```
+   (The ARN is the `pipeline_state_machine_arn` output.) A run takes a few minutes.
+
+The pipeline schedule is on by default (`pipeline_schedule_enabled` in
+`terraform/envs/dev/variables.tf`) and replaces the original direct ingest schedule, which is now
+off (`ingest_schedule_enabled = false`). Keep that one false: with both on, ingestion would run
+twice a day. Enrichment fetches up to 300 new Reed postings per run; a day normally has fewer, but
+after a long outage run the enrich Lambda by hand until `remaining` is 0.
 
 ## Cost
 

@@ -1,0 +1,136 @@
+{
+  "Comment": "Daily pipeline: ingest, then enrich Reed descriptions, then curate to Parquet. A failure in any step sends an SNS email. Ingest and enrich failures do not stop the run, because curating the data already collected is still worthwhile; a curate failure ends it as FAILED.",
+  "StartAt": "Ingest",
+  "States": {
+    "Ingest": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ingest_function_arn}",
+        "Payload": {}
+      },
+      "ResultSelector": {
+        "summary.$": "$.Payload"
+      },
+      "ResultPath": "$.ingest",
+      "TimeoutSeconds": 240,
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.ingestError",
+          "Next": "NotifyIngestFailed"
+        }
+      ],
+      "Next": "Enrich"
+    },
+    "NotifyIngestFailed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${topic_arn}",
+        "Subject": "Skills Radar: ingest step failed",
+        "Message.$": "States.Format('The ingest step failed. Sources that succeeded were still saved, and the pipeline carried on with enrich and curate. Execution: {}. Error: {}', $$.Execution.Id, States.JsonToString($.ingestError))"
+      },
+      "ResultPath": null,
+      "Next": "Enrich"
+    },
+    "Enrich": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${enrich_function_arn}",
+        "Payload": {}
+      },
+      "ResultSelector": {
+        "summary.$": "$.Payload"
+      },
+      "ResultPath": "$.enrich",
+      "TimeoutSeconds": 660,
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.enrichError",
+          "Next": "NotifyEnrichFailed"
+        }
+      ],
+      "Next": "Curate"
+    },
+    "NotifyEnrichFailed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${topic_arn}",
+        "Subject": "Skills Radar: enrich step failed",
+        "Message.$": "States.Format('The Reed enrichment step failed or was rate limited. Postings already fetched were saved, and the pipeline carried on to curate, which uses the truncated text for the rest. Execution: {}. Error: {}', $$.Execution.Id, States.JsonToString($.enrichError))"
+      },
+      "ResultPath": null,
+      "Next": "Curate"
+    },
+    "Curate": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${curate_function_arn}",
+        "Payload": {
+          "dt.$": "States.ArrayGetItem(States.StringSplit($$.Execution.StartTime, 'T'), 0)"
+        }
+      },
+      "ResultSelector": {
+        "summary.$": "$.Payload"
+      },
+      "ResultPath": "$.curate",
+      "TimeoutSeconds": 330,
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.curateError",
+          "Next": "NotifyCurateFailed"
+        }
+      ],
+      "Next": "Succeeded"
+    },
+    "NotifyCurateFailed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${topic_arn}",
+        "Subject": "Skills Radar: curate step failed",
+        "Message.$": "States.Format('The curate step failed, so today has no fresh curated data. Execution: {}. Error: {}', $$.Execution.Id, States.JsonToString($.curateError))"
+      },
+      "ResultPath": null,
+      "Next": "PipelineFailed"
+    },
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Error": "CurateFailed",
+      "Cause": "The curate step failed; see the notification and the execution history."
+    },
+    "Succeeded": {
+      "Type": "Succeed"
+    }
+  }
+}

@@ -4,8 +4,21 @@ variable "region" {
 }
 
 variable "ingest_schedule_enabled" {
-  type    = bool
-  default = true
+  description = "The original direct schedule (ingest Lambda only). Leave false: the pipeline schedule below replaces it, and keeping both would ingest twice a day."
+  type        = bool
+  default     = false
+}
+
+variable "pipeline_schedule_enabled" {
+  description = "Daily 06:00 London run of the whole pipeline (ingest, enrich, curate). Needs the Adzuna and Reed secrets stored."
+  type        = bool
+  default     = true
+}
+
+variable "alert_email" {
+  description = "Where pipeline failure emails go. Supplied by CI from the ALERT_EMAIL repository variable, so the address is not committed. Empty means no subscriber."
+  type        = string
+  default     = ""
 }
 
 variable "pandas_layer_arn" {

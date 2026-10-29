@@ -13,3 +13,7 @@ output "reed_secret_arn" {
 output "dlq_url" {
   value = aws_sqs_queue.dlq.url
 }
+
+output "function_arn" {
+  value = aws_lambda_function.ingest.arn
+}

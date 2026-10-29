@@ -3,7 +3,8 @@
 ```mermaid
 flowchart LR
     subgraph Ingest
-      SCH[EventBridge Scheduler] --> LMB[Ingest Lambda]
+      SCH[EventBridge Scheduler] --> SFN[Step Functions:<br/>ingest, enrich, curate] --> LMB[Ingest Lambda]
+      SFN -.failure.-> SNS[SNS email]
       LMB --> RAW[(S3 raw)]
       LMB -.failure.-> DLQ[SQS DLQ]
       SEC[Secrets Manager] --> LMB
@@ -37,7 +38,7 @@ flowchart LR
 | Phase | Scope | State |
 |---|---|---|
 | 1. Foundations | Repo, Terraform state, OIDC, CI, data buckets, ingestion Lambda and schedule | **Running** |
-| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | **In progress**: Glue table and Athena workgroup over the raw data are built; curation Lambda (Parquet, validation, salary normalisation) is built; Reed enrichment is built; cross-source dedupe and Step Functions are next |
+| 2. Data | Glue catalog, Athena, validation, cross-source dedupe, curated layer, Step Functions | **In progress**: Glue table and Athena workgroup over the raw data are built; curation Lambda (Parquet, validation, salary normalisation), Reed enrichment and the Step Functions pipeline with SNS alerts are built; cross-source dedupe is next |
 | 3. ML | Evaluated skill extraction, emerging-skill detection, momentum forecasts, personalised gap engine, SageMaker Pipelines and Model Registry | |
 | 4. Serving and UI | Endpoint, API Gateway, React front end on CloudFront, methodology page | |
 | 5. Monitoring | Model Monitor, vocabulary drift, retraining triggers, dashboards, budgets and alarms | |
@@ -66,5 +67,6 @@ The detailed plan, evaluation approach, MVP cut lines and risks are in [roadmap.
 - **Idempotent downstream.** Re-runs can duplicate rows; every record carries a `dedupe_key`.
 - **OIDC, not access keys.** The plan role is read-only and assumable from pull requests; the
   apply role is assumable only from jobs in the `dev` GitHub environment.
-- **Scheduler disabled by default** until the API secrets exist, so a first deploy cannot fail
-  on missing credentials. Turn it on with `ingest_schedule_enabled`.
+- **Scheduler needs the API secrets.** The daily pipeline schedule (`pipeline_schedule_enabled`) is
+  on by default; store the Adzuna and Reed keys before the first deploy, or the first run will
+  email a failure. The older direct ingest schedule is off.

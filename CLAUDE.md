@@ -33,7 +33,7 @@ Differentiators to protect (see docs/roadmap.md):
 | `terraform/iam/` | Stack: IAM groups and policies (admin applies once, local state, no CI) |
 | `terraform/bootstrap/` | Stack: state bucket and GitHub OIDC roles (applied once locally, local state) |
 | `terraform/envs/dev/` | Stack: data buckets and ingestion (S3 remote state, applied by CI) |
-| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `analytics`, `github_oidc`, `iam_groups` |
+| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `orchestrate`, `analytics`, `github_oidc`, `iam_groups` |
 | `.github/workflows/` | `ci.yml`, `terraform-plan.yml` (PRs), `terraform-apply.yml` (main, `dev` environment) |
 | `docs/` | architecture.md, data-sources.md, roadmap.md, iam-access.md |
 
@@ -68,7 +68,8 @@ then `init -backend=false` and `validate` in each of the three root stacks.
 - Stack order: `terraform/iam` (optional), then `terraform/bootstrap`
   (`terraform apply -var github_repo=<owner>/<repo>`), then push to main so CI applies `envs/dev`.
 - GitHub setup: repo variables `TF_STATE_BUCKET` and `AWS_PLAN_ROLE_ARN`; environment `dev` with
-  variable `AWS_APPLY_ROLE_ARN`.
+  variable `AWS_APPLY_ROLE_ARN`. Optional repo variable `ALERT_EMAIL` (pipeline failure emails;
+  passed to Terraform as `TF_VAR_alert_email`, so the address is never committed).
 
 ## Status
 Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progress.
@@ -87,10 +88,14 @@ Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progr
   (Lambda with AWS SDK for pandas layer for pyarrow) + `curated_postings` table and three saved queries.
   Invoke with `{"all": true}` to backfill. Heuristics: salary period inferred from magnitude, except Reed postings with a cached detail, which use its `salaryType` (`*_reported` basis);
   truncation limits adzuna 500 / reed 450; HN location parsed from header line.
-- Phase 2 step 3 built, not yet deployed: `src/skillsradar/enrich/` + `terraform/modules/enrich`. Fetches
+- Phase 2 step 3 (deployed, working; Reed detail fields verified, 644 of 644 Reed rows enriched): `src/skillsradar/enrich/` + `terraform/modules/enrich`. Fetches
   Reed `/jobs/{id}` once per new ID into `enriched/reed/<id>.json.gz` in the raw bucket; curate uses it
-  and drops the truncation flag. The Reed detail response shape is unverified (code reads `jobDescription`).
-- Next: cross-source dedupe, Step Functions (ingest, enrich, curate); then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+  and drops the truncation flag. Adzuna descriptions stay truncated (API limit; no scraping).
+- Phase 2 step 4 built, not yet deployed: `terraform/modules/orchestrate`: Step Functions state machine
+  (definition in `pipeline.asl.json.tftpl`, graph checked by `tests/test_pipeline_definition.py`) runs
+  ingest, enrich, curate daily at 06:00 London via EventBridge Scheduler; SNS topic emails failures.
+  The old direct ingest schedule is now off (`ingest_schedule_enabled = false`); keep it off.
+- Next: cross-source dedupe; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
 - Terraform formatting can be checked here with OpenTofu (`tofu fmt`); providers cannot be fetched
   in the sandbox, so `validate` only runs in CI.
 

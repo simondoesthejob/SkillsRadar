@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1010" width="1540" height="1010" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif">
 <defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b4656"/></marker></defs>
 <rect width="1540" height="1010" fill="#ffffff"/>
-<text x="30" y="42" font-size="22" font-weight="bold" fill="#1b2430" text-anchor="start">Skills Radar: AWS elements and how they connect (ingest, curate, enrich, Athena)</text>
+<text x="30" y="42" font-size="22" font-weight="bold" fill="#1b2430" text-anchor="start">Skills Radar: AWS elements and how they connect (daily pipeline, curation, Athena)</text>
 <text x="1510" y="42" font-size="12" font-weight="normal" fill="#4a5565" text-anchor="end">Region eu-west-2</text>
 <rect x="30" y="70" width="220" height="700" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="44" y="92" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">GitHub</text>
@@ -61,28 +61,50 @@
 <rect x="680" y="70" width="620" height="700" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="694" y="92" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Dev stack</text>
 <text x="694" y="109" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/envs/dev, applied by CI</text>
-<rect x="800" y="130" width="170" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
-<rect x="800" y="130" width="6" height="76" rx="3" fill="#8C4FFF"/>
-<text x="816" y="151" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">SQS dead-letter queue</text>
-<text x="816" y="169" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">14-day retention</text>
-<text x="816" y="184" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">encrypted</text>
-<rect x="1110" y="130" width="150" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
-<rect x="1110" y="130" width="6" height="76" rx="3" fill="#C7157B"/>
-<text x="1126" y="151" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">CloudWatch alarm</text>
-<text x="1126" y="169" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">fires if the queue</text>
-<text x="1126" y="184" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">is not empty</text>
+<rect x="695" y="112" width="170" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="695" y="112" width="6" height="76" rx="3" fill="#ED7100"/>
+<text x="711" y="133" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Step Functions</text>
+<text x="711" y="151" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">daily pipeline:</text>
+<text x="711" y="166" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">ingest, enrich, curate</text>
+<text x="711" y="181" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">failures email via SNS</text>
+<rect x="905" y="112" width="150" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="905" y="112" width="6" height="76" rx="3" fill="#8C4FFF"/>
+<text x="921" y="133" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">SNS topic: alerts</text>
+<text x="921" y="151" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">emails you when a</text>
+<text x="921" y="166" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">step or run fails</text>
+<rect x="1110" y="112" width="150" height="76" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="1110" y="112" width="6" height="76" rx="3" fill="#C7157B"/>
+<text x="1126" y="133" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">CloudWatch alarms</text>
+<text x="1126" y="151" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">failed run; DLQ</text>
+<text x="1126" y="166" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">not empty</text>
+<rect x="940" y="205" width="150" height="70" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
+<rect x="940" y="205" width="6" height="70" rx="3" fill="#8C4FFF"/>
+<text x="956" y="226" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">SQS dead-letter queue</text>
+<text x="956" y="244" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">14-day retention</text>
+<text x="956" y="259" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">encrypted</text>
 <rect x="695" y="300" width="170" height="96" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="695" y="300" width="6" height="96" rx="3" fill="#ED7100"/>
 <text x="711" y="321" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">EventBridge Scheduler</text>
 <text x="711" y="339" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">daily 06:00 London</text>
-<text x="711" y="354" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">on/off by a variable</text>
-<text x="711" y="369" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">role: ingest-scheduler</text>
+<text x="711" y="354" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">role: pipeline-scheduler</text>
+<text x="711" y="369" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">starts the pipeline</text>
 <rect x="910" y="300" width="150" height="96" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="910" y="300" width="6" height="96" rx="3" fill="#ED7100"/>
 <text x="926" y="321" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">Lambda: ingest</text>
 <text x="926" y="339" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">Python 3.12, 180 s</text>
 <text x="926" y="354" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">pulls and stores jobs</text>
 <text x="926" y="369" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">role: ingest-lambda</text>
+<path d="M 780,300 L 780,188" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="790" y="250" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">starts</text>
+<path d="M 865,147 L 905,147" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<path d="M 1110,147 L 1055,147" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1082" y="139" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">alerts</text>
+<path d="M 1015,205 L 1015,188" fill="none" stroke="#3b4656" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#head)"/>
+<path d="M 1090,240 L 1185,188" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1150" y="230" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">monitored</text>
+<path d="M 840,188 L 930,300" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<path d="M 1010,300 L 1010,275" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
+<text x="1020" y="292" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">failed run</text>
 <rect x="710" y="470" width="150" height="130" rx="8" fill="#fff" stroke="#C5CCD6" stroke-width="1.2"/>
 <rect x="710" y="470" width="6" height="130" rx="3" fill="#3F8624"/>
 <text x="726" y="491" font-size="13" font-weight="bold" fill="#1b2430" text-anchor="start">S3 data buckets</text>
@@ -101,14 +123,6 @@
 <text x="1126" y="509" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">adzuna: id + key</text>
 <text x="1126" y="524" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">reed: API key</text>
 <text x="1126" y="539" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">values set by you</text>
-<path d="M 970,168 L 1110,168" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="1040" y="160" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">monitored</text>
-<path d="M 865,348 L 910,348" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="887" y="340" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">invoke</text>
-<path d="M 780,300 L 840,206" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="730" y="250" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">failed invoke</text>
-<path d="M 985,300 L 930,206" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
-<text x="975" y="250" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">failed run</text>
 <path d="M 935,396 L 850,470" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
 <text x="905" y="438" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="start" font-style="italic">gzip JSONL</text>
 <path d="M 985,396 L 985,470" fill="none" stroke="#3b4656" stroke-width="1.8" marker-end="url(#head)"/>
@@ -166,11 +180,10 @@
 <text x="1200" y="338" font-size="10.5" font-weight="normal" fill="#3b4656" text-anchor="middle" font-style="italic">HTTPS, rate-limited</text>
 <rect x="1340" y="470" width="170" height="170" rx="12" fill="#FBFBFC" stroke="#A8B0BB" stroke-width="1.5" stroke-dasharray="6 5"/>
 <text x="1354" y="492" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">Planned (later)</text>
-<text x="1355" y="508" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">Step Functions, SNS</text>
-<text x="1355" y="528" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">SageMaker pipeline</text>
-<text x="1355" y="548" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">API Gateway, Lambda</text>
-<text x="1355" y="568" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">DynamoDB, Cognito</text>
-<text x="1355" y="588" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">CloudFront, S3 (UI)</text>
+<text x="1355" y="508" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">SageMaker pipeline</text>
+<text x="1355" y="528" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">API Gateway, Lambda</text>
+<text x="1355" y="548" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">DynamoDB, Cognito</text>
+<text x="1355" y="568" font-size="11.5" font-weight="normal" fill="#4a5565" text-anchor="start">CloudFront, S3 (UI)</text>
 <rect x="30" y="800" width="610" height="180" rx="12" fill="#F6F8FA" stroke="#9AA5B1" stroke-width="1.5"/>
 <text x="44" y="822" font-size="14" font-weight="bold" fill="#1b2430" text-anchor="start">AWS: Access stack</text>
 <text x="44" y="839" font-size="11" font-weight="normal" fill="#4a5565" text-anchor="start">terraform/iam, optional, applied once by an admin</text>
