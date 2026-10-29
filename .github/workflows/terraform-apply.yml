@@ -39,4 +39,7 @@ jobs:
         run: terraform init -input=false -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="region=eu-west-2"
       - name: Apply
         working-directory: terraform/envs/dev
+        env:
+          # Optional repository variable; keeps the address out of the code.
+          TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
         run: terraform apply -input=false -auto-approve -lock-timeout=60s

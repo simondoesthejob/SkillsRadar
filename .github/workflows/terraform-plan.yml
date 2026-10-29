@@ -34,6 +34,8 @@ jobs:
         run: terraform init -input=false -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="region=eu-west-2"
       - name: Plan
         working-directory: terraform/envs/dev
+        env:
+          TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
         run: |
           set -o pipefail
           terraform plan -input=false -no-color -lock-timeout=60s | tee plan.txt
