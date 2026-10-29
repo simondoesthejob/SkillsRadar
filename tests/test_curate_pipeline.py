@@ -116,3 +116,40 @@ def test_empty_input():
     result = curate_day([], "reed", NOW)
     assert result.rows == []
     assert result.stats["rows_in"] == 0
+
+
+def test_cached_full_description_replaces_truncated_search_text():
+    short = "x" * 460  # looks truncated for Reed
+    detail = {
+        "jobId": 1,
+        "jobDescription": "<p>The <b>full</b> description</p><ul><li>Python</li></ul>",
+    }
+    result = curate_day([raw(description=short)], "reed", NOW, {"1": detail})
+    row = result.rows[0]
+    assert row["description"] == "The full description\n\n- Python"
+    assert row["description_truncated"] is False
+    assert result.stats["descriptions_enriched"] == 1
+    assert "truncated_descriptions" not in result.stats
+
+
+def test_without_a_cached_detail_the_search_text_is_kept_and_flagged():
+    result = curate_day(
+        [raw(description="y" * 460)], "reed", NOW, {"other": {"jobDescription": "z"}}
+    )
+    assert result.rows[0]["description_truncated"] is True
+    assert "descriptions_enriched" not in result.stats
+
+
+def test_gone_marker_and_empty_detail_are_ignored():
+    for detail in ({"jobId": 1, "gone": True}, {"jobId": 1, "jobDescription": ""}):
+        result = curate_day([raw(description="y" * 460)], "reed", NOW, {"1": detail})
+        assert result.rows[0]["description"] == "y" * 460
+        assert result.rows[0]["description_truncated"] is True
+
+
+def test_enriched_description_still_has_contact_details_removed():
+    detail = {"jobDescription": "<p>Email jobs@agency.example or call 020 7946 0958</p>"}
+    result = curate_day([raw()], "reed", NOW, {"1": detail})
+    assert "jobs@agency.example" not in result.rows[0]["description"]
+    assert result.stats["emails_removed"] == 1
+    assert result.stats["phones_removed"] == 1

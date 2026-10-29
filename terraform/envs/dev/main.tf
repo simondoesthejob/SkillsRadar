@@ -43,6 +43,16 @@ module "ingest" {
   schedule_enabled = var.ingest_schedule_enabled
 }
 
+module "enrich" {
+  source = "../../modules/enrich"
+
+  name_prefix     = local.name_prefix
+  source_dir      = "${path.root}/../../../src"
+  raw_bucket_name = module.data.bucket_names["raw"]
+  raw_bucket_arn  = module.data.bucket_arns["raw"]
+  reed_secret_arn = module.ingest.reed_secret_arn
+}
+
 module "analytics" {
   source = "../../modules/analytics"
 

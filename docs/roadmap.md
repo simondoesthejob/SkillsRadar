@@ -40,7 +40,10 @@ it as a development dataset, not as UK evidence).
   - Hacker News location and remote flag parsed from the header line (heuristic).
   Still to do in this area: cross-source dedupe (title, company, location, description
   similarity).
-- **Reed enrichment:** fetch full descriptions via `/jobs/{id}` for new Reed IDs only.
+- **Reed enrichment (built, not yet deployed):** the `enrich` Lambda fetches full descriptions via
+  `/jobs/{id}` for new Reed IDs only and caches them in `enriched/reed/` in the raw bucket; curation
+  uses them. The detail response has not been checked against the live API; the Lambda reports the
+  fields it receives.
 - **Orchestration:** a Step Functions state machine runs ingest, validate, curate and then starts
   the ML pipeline, with retries and failure notifications through SNS.
 - **Report:** cross-source match rate and per-source coverage, written as a small dataset the UI

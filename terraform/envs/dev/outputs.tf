@@ -25,3 +25,7 @@ output "athena_database" {
 output "curate_function_name" {
   value = module.curate.function_name
 }
+
+output "enrich_function_name" {
+  value = module.enrich.function_name
+}

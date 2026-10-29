@@ -41,14 +41,17 @@ data "aws_iam_policy_document" "lambda" {
     condition {
       test     = "StringLike"
       variable = "s3:prefix"
-      values   = ["raw/*"]
+      values   = ["raw/*", "enriched/*"]
     }
   }
 
   statement {
-    sid       = "ReadRawData"
-    actions   = ["s3:GetObject"]
-    resources = ["${var.raw_bucket_arn}/raw/*"]
+    sid     = "ReadRawData"
+    actions = ["s3:GetObject"]
+    resources = [
+      "${var.raw_bucket_arn}/raw/*",
+      "${var.raw_bucket_arn}/enriched/*", // full descriptions cached by the enrich Lambda
+    ]
   }
 
   statement {

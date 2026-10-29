@@ -20,12 +20,12 @@ for the design, [docs/roadmap.md](docs/roadmap.md) for phases 2 to 5, and
 
 | Path | Purpose |
 |---|---|
-| `src/skillsradar/` | Python package: job sources (Adzuna, Reed, Hacker News), canonical model, ingestion Lambda handler, and `curate/` (validation, dedupe, normalisation, Parquet) |
+| `src/skillsradar/` | Python package: job sources (Adzuna, Reed, Hacker News), canonical model, ingestion Lambda handler, `enrich/` (full Reed descriptions) and `curate/` (validation, dedupe, normalisation, Parquet) |
 | `tests/` | Unit tests; no network or AWS access needed |
 | `terraform/iam/` | One-off access stack: bootstrap and operator IAM groups (applied locally by an admin, before the bootstrap) |
 | `terraform/bootstrap/` | One-off stack: remote-state bucket and GitHub OIDC roles (applied locally) |
 | `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm, curation Lambda, Glue tables and Athena workgroup |
-| `terraform/modules/` | `data`, `ingest`, `curate`, `analytics`, `github_oidc`, `iam_groups` modules |
+| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `analytics`, `github_oidc`, `iam_groups` modules |
 | `terraform/modules/analytics/queries/` | Example Athena queries (saved in the workgroup by Terraform) |
 | `scripts/aws_cli_walkthrough.sh` | Learning aid: the same AWS resources built with plain AWS CLI calls (`DRY_RUN=1` prints them without calling AWS). Not a deployment path |
 | `.github/workflows/` | CI (lint, tests, `terraform fmt/validate`), plan on pull request, apply on merge |
@@ -121,6 +121,29 @@ than 1 GiB. New days appear automatically; there is no crawler.
 The `projection_start_date` setting of the `analytics` module (default 2026-10-01) must be on or
 before your first ingestion date, or Athena will not look at the earlier days.
 
+## Enriching Reed descriptions
+
+Reed's search results cut each description to about 450 characters. The `enrich` Lambda
+(`skillsradar-dev-enrich`) fetches the full text once per posting from Reed's `/jobs/{id}` endpoint
+and caches it in the raw bucket under `enriched/reed/<id>.json.gz`. The curate Lambda uses the
+cached text when it exists (and sets `description_truncated` to false), so run enrichment first,
+then curate.
+
+```bash
+# fetch up to 300 postings not yet cached, from the last 3 days of raw data (the defaults)
+aws lambda invoke --function-name skillsradar-dev-enrich --region eu-west-2 \
+  --payload '{}' --cli-binary-format raw-in-base64-out out.json && cat out.json
+# clear a backlog: look at every day, in batches
+aws lambda invoke --function-name skillsradar-dev-enrich --region eu-west-2 \
+  --payload '{"all": true, "max_new": 300}' --cli-binary-format raw-in-base64-out out.json
+```
+
+Each run reports how many postings were fetched, are already cached and remain; repeat until
+`remaining` is 0. It pauses one second between calls, stops at once if Reed answers 401, 403 or 429
+(and the Lambda then reports an error), and records postings Reed no longer has so they are not
+retried. `detail_keys` in the output lists the fields Reed returned for the first posting; that is
+worth a look, because the detail response has not been checked against the live API yet.
+
 ## Curating the data
 
 The `curate` Lambda (`skillsradar-dev-curate`) reads the raw JSONL and writes clean Parquet to the
@@ -136,7 +159,7 @@ aws lambda invoke --function-name skillsradar-dev-curate --region eu-west-2 \
   --payload '{"dt": "2026-10-19", "sources": ["reed"]}' --cli-binary-format raw-in-base64-out out.json
 ```
 
-Without a payload it curates today (UTC). Rejected records land in `quarantine/` and a per-partition
+Without a payload it curates today (UTC). Re-run it after enrichment to pick up the full descriptions. Rejected records land in `quarantine/` and a per-partition
 quality report in `quality/` in the curated bucket. Three saved queries cover the curated table.
 The Lambda uses the AWS SDK for pandas managed layer; if a deploy complains about the layer, set
 `pandas_layer_arn` in `terraform/envs/dev/variables.tf` to the current Python 3.12 x86_64 ARN for

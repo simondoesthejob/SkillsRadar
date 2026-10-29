@@ -2,14 +2,15 @@
 
 Steps: validate (reject what cannot be trusted), de-duplicate within the day on `dedupe_key`
 (keeping the most recently ingested copy), remove personal contact details, parse Hacker News
-headers, normalise salary, flag truncated descriptions. Cross-source de-duplication and Reed
-description enrichment are separate, later steps.
+headers, normalise salary, flag truncated descriptions. Full descriptions cached by the enrich
+Lambda replace the truncated search text when available. Cross-source de-duplication is a later
+step.
 """
 
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -29,12 +30,24 @@ def _dedupe_key(record: dict[str, Any]) -> str:
 
 
 def _curate_one(
-    record: dict[str, Any], source: str, copies: list[dict[str, Any]], curated_at: datetime
+    record: dict[str, Any],
+    source: str,
+    copies: list[dict[str, Any]],
+    curated_at: datetime,
+    detail: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], Counter]:
     counts: Counter = Counter()
 
+    # A cached full description (HTML from the source's detail endpoint) beats the truncated
+    # search-result text. A detail marked "gone" (the posting was removed) is ignored.
+    full_text = ""
+    if detail and not detail.get("gone"):
+        full_text = text.html_to_text(str(detail.get("jobDescription") or ""))
+    if full_text:
+        counts["descriptions_enriched"] += 1
+
     title, pii_title = text.strip_pii(str(record["title"]).strip())
-    description, pii_desc = text.strip_pii(str(record["description"]).strip())
+    description, pii_desc = text.strip_pii(full_text or str(record["description"]).strip())
     counts["emails_removed"] += pii_title["emails"] + pii_desc["emails"]
     counts["phones_removed"] += pii_title["phones"] + pii_desc["phones"]
 
@@ -59,7 +72,7 @@ def _curate_one(
     if posted and posted_date is None:
         counts["posted_at_unparseable"] += 1
 
-    truncated = rules.is_truncated(source, description or "")
+    truncated = False if full_text else rules.is_truncated(source, description or "")
     if truncated:
         counts["truncated_descriptions"] += 1
 
@@ -92,7 +105,10 @@ def _curate_one(
 
 
 def curate_day(
-    records: Iterable[dict[str, Any]], source: str, curated_at: datetime
+    records: Iterable[dict[str, Any]],
+    source: str,
+    curated_at: datetime,
+    enriched: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> CurationResult:
     result = CurationResult()
     counts: Counter = Counter()
@@ -111,7 +127,8 @@ def curate_day(
 
     for copies in groups.values():
         latest = max(copies, key=lambda r: str(r.get("ingested_at") or ""))
-        row, row_counts = _curate_one(latest, source, copies, curated_at)
+        detail = (enriched or {}).get(str(latest["source_id"]))
+        row, row_counts = _curate_one(latest, source, copies, curated_at, detail)
         result.rows.append(row)
         counts.update(row_counts)
 

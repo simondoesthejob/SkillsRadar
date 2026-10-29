@@ -28,12 +28,12 @@ Differentiators to protect (see docs/roadmap.md):
 ## Layout
 | Path | Purpose |
 |---|---|
-| `src/skillsradar/` | Python package: `models.py`, `config.py`, `http.py`, `handler.py`, `sources/{adzuna,reed,hn_hiring}.py` |
+| `src/skillsradar/` | Python package: `models.py`, `config.py`, `http.py`, `handler.py`, `storage.py`, `sources/{adzuna,reed,hn_hiring}.py`, `curate/` (raw to Parquet), `enrich/` (full Reed descriptions) |
 | `tests/` | Offline unit tests (fake HTTP and AWS clients) |
 | `terraform/iam/` | Stack: IAM groups and policies (admin applies once, local state, no CI) |
 | `terraform/bootstrap/` | Stack: state bucket and GitHub OIDC roles (applied once locally, local state) |
 | `terraform/envs/dev/` | Stack: data buckets and ingestion (S3 remote state, applied by CI) |
-| `terraform/modules/` | `data`, `ingest`, `curate`, `analytics`, `github_oidc`, `iam_groups` |
+| `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `analytics`, `github_oidc`, `iam_groups` |
 | `.github/workflows/` | `ci.yml`, `terraform-plan.yml` (PRs), `terraform-apply.yml` (main, `dev` environment) |
 | `docs/` | architecture.md, data-sources.md, roadmap.md, iam-access.md |
 
@@ -83,11 +83,14 @@ Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progr
   partition projection, Athena workgroup with a 1 GiB scan cap, five saved queries in
   `terraform/modules/analytics/queries/`). Needs a push to main (CI apply) and a one-off re-apply of
   `terraform/iam` so the operator group can run Athena queries.
-- Phase 2 step 2 built, not yet deployed: `src/skillsradar/curate/` + `terraform/modules/curate`
+- Phase 2 step 2 (deployed, working; HN location filter still being tuned): `src/skillsradar/curate/` + `terraform/modules/curate`
   (Lambda with AWS SDK for pandas layer for pyarrow) + `curated_postings` table and three saved queries.
   Invoke with `{"all": true}` to backfill. Heuristics: salary period inferred from magnitude;
   truncation limits adzuna 500 / reed 450; HN location parsed from header line.
-- Next: Reed enrichment, cross-source dedupe, Step Functions; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+- Phase 2 step 3 built, not yet deployed: `src/skillsradar/enrich/` + `terraform/modules/enrich`. Fetches
+  Reed `/jobs/{id}` once per new ID into `enriched/reed/<id>.json.gz` in the raw bucket; curate uses it
+  and drops the truncation flag. The Reed detail response shape is unverified (code reads `jobDescription`).
+- Next: cross-source dedupe, Step Functions (ingest, enrich, curate); then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
 - Terraform formatting can be checked here with OpenTofu (`tofu fmt`); providers cannot be fetched
   in the sandbox, so `validate` only runs in CI.
 

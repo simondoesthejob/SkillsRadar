@@ -14,7 +14,9 @@ RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class HttpError(RuntimeError):
-    pass
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 def get_json(
@@ -41,10 +43,11 @@ def get_json(
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             if exc.code not in RETRYABLE_STATUS:
-                raise HttpError(f"GET failed with HTTP {exc.code}") from exc
+                raise HttpError(f"GET failed with HTTP {exc.code}", exc.code) from exc
             last_error = exc
         except urllib.error.URLError as exc:
             last_error = exc
         if attempt < retries:
             sleep(backoff * (2**attempt))
-    raise HttpError(f"GET failed after {retries + 1} attempts") from last_error
+    status = last_error.code if isinstance(last_error, urllib.error.HTTPError) else None
+    raise HttpError(f"GET failed after {retries + 1} attempts", status) from last_error

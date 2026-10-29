@@ -94,3 +94,14 @@ def test_get_json_retries_transient_errors_then_raises():
         get_json("https://example.test", retries=2, opener=failing_opener, sleep=sleeps.append)
     assert len(attempts) == 3
     assert sleeps == [1.5, 3.0]
+
+
+def test_http_error_carries_the_status_code():
+    import urllib.error
+
+    def opener(request, timeout):
+        raise urllib.error.HTTPError(request.full_url, 404, "Not Found", {}, None)
+
+    with pytest.raises(HttpError) as excinfo:
+        get_json("https://example.com/x", opener=opener, sleep=lambda s: None)
+    assert excinfo.value.status == 404

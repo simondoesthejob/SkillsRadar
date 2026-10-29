@@ -168,3 +168,36 @@ def test_settings_from_env():
         {"RAW_BUCKET": "r", "CURATED_BUCKET": "c", "MAX_REJECT_RATIO": "0.1"}
     )
     assert (s.raw_bucket, s.curated_bucket, s.max_reject_ratio) == ("r", "c", 0.1)
+
+
+def test_reed_day_uses_cached_full_descriptions():
+    from skillsradar.storage import enriched_key
+
+    store = FakeStore()
+    put_raw(
+        store,
+        "reed",
+        "2026-10-20",
+        [record("reed", "1", description="x" * 460), record("reed", "2")],
+    )
+    detail = {"jobId": 1, "jobDescription": "<p>Full text</p>"}
+    store.write("raw", enriched_key("reed", "1"), gzip.compress(json.dumps(detail).encode()))
+
+    stats = handler.curate_source_day(
+        store, SETTINGS, "reed", "2026-10-20", NOW, to_parquet=fake_parquet, emit=lambda s: None
+    )
+    assert stats["descriptions_enriched"] == 1
+    rows = json.loads(store.read("curated", "postings/dt=2026-10-20/source=reed/postings.parquet"))
+    by_id = {r["source_id"]: r for r in rows}
+    assert by_id["1"]["description"] == "Full text"
+    assert by_id["1"]["description_truncated"] is False
+    assert by_id["2"]["description"] == "Build pipelines"
+
+
+def test_other_sources_do_not_look_for_cached_details():
+    store = FakeStore()
+    put_raw(store, "adzuna", "2026-10-20", [record("adzuna", "1")])
+    stats = handler.curate_source_day(
+        store, SETTINGS, "adzuna", "2026-10-20", NOW, to_parquet=fake_parquet, emit=lambda s: None
+    )
+    assert "descriptions_enriched" not in stats

@@ -20,25 +20,22 @@ import json
 import logging
 import re
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from typing import Any, Protocol
+from typing import Any
 
 from skillsradar.curate import metrics, parquet
 from skillsradar.curate.pipeline import curate_day
+from skillsradar.storage import ObjectStore, S3Store, enriched_key, enriched_prefix
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 ALL_SOURCES = ("adzuna", "reed", "hn_hiring")
 METRICS_NAMESPACE = "SkillsRadar/Curation"
+ENRICHED_SOURCES = ("reed",)  # sources whose full descriptions are fetched by the enrich Lambda
 _DT_IN_KEY = re.compile(r"/dt=(\d{4}-\d{2}-\d{2})/")
-
-
-class ObjectStore(Protocol):
-    def list_keys(self, bucket: str, prefix: str) -> list[str]: ...
-    def read(self, bucket: str, key: str) -> bytes: ...
-    def write(self, bucket: str, key: str, body: bytes) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -82,6 +79,26 @@ def read_raw_records(store: ObjectStore, bucket: str, source: str, dt: str):
     return records, bad_lines, len(keys)
 
 
+def load_enriched(
+    store: ObjectStore, bucket: str, source: str, ids: Iterable[str], workers: int = 16
+) -> dict[str, dict[str, Any]]:
+    """Cached full details (written by the enrich Lambda) for the given IDs, where they exist."""
+    available = set(store.list_keys(bucket, enriched_prefix(source)))
+    wanted = [i for i in ids if enriched_key(source, i) in available]
+
+    def load(source_id: str) -> tuple[str, dict[str, Any] | None]:
+        try:
+            body = store.read(bucket, enriched_key(source, source_id))
+            detail = json.loads(gzip.decompress(body))
+            return source_id, detail if isinstance(detail, dict) else None
+        except Exception:  # noqa: BLE001 - an unreadable cache entry just means "not enriched"
+            log.warning("could not read enriched %s/%s", source, source_id)
+            return source_id, None
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return {i: d for i, d in pool.map(load, wanted) if d}
+
+
 def discover_dates(store: ObjectStore, bucket: str) -> list[str]:
     found = {m.group(1) for k in store.list_keys(bucket, "raw/") if (m := _DT_IN_KEY.search(k))}
     return sorted(found)
@@ -122,7 +139,11 @@ def curate_source_day(
     if files == 0:
         return {"source": source, "dt": dt, "status": "no_raw_data"}
 
-    result = curate_day(records, source, now)
+    enriched = None
+    if source in ENRICHED_SOURCES:
+        ids = {str(r["source_id"]) for r in records if r.get("source_id")}
+        enriched = load_enriched(store, settings.raw_bucket, source, ids)
+    result = curate_day(records, source, now, enriched)
     stats = {"dt": dt, "raw_files": files, **result.stats}
     if bad_lines:
         stats["rows_in"] += bad_lines
@@ -181,24 +202,6 @@ def run(
         "summaries": summaries,
         "failed": [(s["dt"], s["source"]) for s in failed],
     }
-
-
-class S3Store:
-    def __init__(self, client: Any) -> None:
-        self._s3 = client
-
-    def list_keys(self, bucket: str, prefix: str) -> list[str]:
-        keys: list[str] = []
-        paginator = self._s3.get_paginator("list_objects_v2")
-        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
-            keys.extend(obj["Key"] for obj in page.get("Contents", []))
-        return keys
-
-    def read(self, bucket: str, key: str) -> bytes:
-        return self._s3.get_object(Bucket=bucket, Key=key)["Body"].read()
-
-    def write(self, bucket: str, key: str, body: bytes) -> None:
-        self._s3.put_object(Bucket=bucket, Key=key, Body=body)
 
 
 def lambda_handler(event: dict[str, Any] | None, context: Any) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 import pytest
 
-from skillsradar.curate.text import strip_pii
+from skillsradar.curate.text import html_to_text, strip_pii
 
 
 @pytest.mark.parametrize(
@@ -56,3 +56,19 @@ def test_salaries_and_dates_are_left_alone(raw):
 def test_handles_none_and_empty():
     assert strip_pii(None) == (None, {"emails": 0, "phones": 0})
     assert strip_pii("") == ("", {"emails": 0, "phones": 0})
+
+
+def test_html_to_text_keeps_structure_and_drops_markup():
+    html = (
+        "<p>About us &amp; the role</p><ul><li>Python</li><li>SQL&nbsp;(advanced)</li></ul>"
+        "<script>track()</script><h2>Benefits</h2><p>Pension<br>Bonus</p>"
+    )
+    assert html_to_text(html) == (
+        "About us & the role\n\n- Python\n- SQL (advanced)\n\nBenefits\n\nPension\nBonus"
+    )
+
+
+def test_html_to_text_handles_empty_and_plain_text():
+    assert html_to_text(None) == ""
+    assert html_to_text("") == ""
+    assert html_to_text("Plain text, no markup") == "Plain text, no markup"
