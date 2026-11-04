@@ -103,7 +103,12 @@ def test_source_with_no_raw_data_is_skipped():
     put_raw(store, "reed", "2026-10-20", [record()])
     summary = run(store, {"dt": "2026-10-20"})
     statuses = {s["source"]: s["status"] for s in summary["summaries"]}
-    assert statuses == {"adzuna": "no_raw_data", "reed": "ok", "hn_hiring": "no_raw_data"}
+    assert statuses == {
+        "adzuna": "no_raw_data",
+        "reed": "ok",
+        "hn_hiring": "no_raw_data",
+        "devitjobs": "no_raw_data",
+    }
 
 
 def test_rejected_records_are_quarantined_and_too_many_fails_the_run():

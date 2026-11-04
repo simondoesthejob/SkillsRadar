@@ -4,6 +4,7 @@ from skillsradar import handler
 from skillsradar.config import DEFAULT_QUERIES, Settings
 from skillsradar.handler import UnavailableSource, build_sources
 from skillsradar.sources.adzuna import AdzunaSource
+from skillsradar.sources.devitjobs import DevITjobsSource
 from skillsradar.sources.hn_hiring import HnWhoIsHiring
 from skillsradar.sources.reed import ReedSource
 
@@ -18,7 +19,7 @@ def fake_secrets(arn: str) -> dict:
 
 def test_default_sources_are_built_in_order():
     built = list(build_sources(settings(), handler.ALL_SOURCES, fake_secrets))
-    assert [type(s) for s in built] == [AdzunaSource, ReedSource, HnWhoIsHiring]
+    assert [type(s) for s in built] == [AdzunaSource, ReedSource, HnWhoIsHiring, DevITjobsSource]
 
 
 def test_only_requested_sources_are_built():
@@ -38,7 +39,12 @@ def test_missing_secret_isolated_to_that_source():
         return fake_secrets(arn)
 
     built = list(build_sources(settings(), handler.ALL_SOURCES, secrets))
-    assert [type(s) for s in built] == [AdzunaSource, UnavailableSource, HnWhoIsHiring]
+    assert [type(s) for s in built] == [
+        AdzunaSource,
+        UnavailableSource,
+        HnWhoIsHiring,
+        DevITjobsSource,
+    ]
 
     written = []
     summary = handler.run([built[1]], "bucket", lambda *a: written.append(a))

@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills Radar labeller</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1b2430; --muted: #5a6575; --line: #d5dae2;
+    --accent: #2e73b8; --accent-ink: #ffffff; --chip: #e4eefa; --chip-ink: #1d4f86;
+    --new: #fff3d6; --new-ink: #7a5200; --ok: #2f7d32; --warn: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151a21; --card: #1e252f; --ink: #e8ecf1; --muted: #9aa5b4; --line: #34404f;
+      --accent: #5fa0e6; --accent-ink: #0d1722; --chip: #223a57; --chip-ink: #b9d6f5;
+      --new: #4a3a14; --new-ink: #f5d98a; --ok: #6cc070; --warn: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+           padding: 10px 20px; background: var(--card); border-bottom: 1px solid var(--line);
+           position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 16px; margin: 0; }
+  .progress { flex: 1; min-width: 180px; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .bar > div { height: 100%; background: var(--ok); width: 0; transition: width .2s; }
+  select, input[type=text], textarea, button {
+    font: inherit; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr); gap: 16px;
+         padding: 16px 20px; align-items: start; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 13px; }
+  .badge { padding: 1px 8px; border-radius: 10px; background: var(--chip); color: var(--chip-ink);
+           font-size: 12px; }
+  h2 { margin: 6px 0 4px; font-size: 20px; }
+  .desc { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 12px; font-size: 15px;
+          max-height: calc(100vh - 230px); overflow: auto; padding-right: 6px; }
+  .side { position: sticky; top: 74px; }
+  label { display: block; font-weight: 600; margin: 0 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 34px; margin-bottom: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--chip);
+          color: var(--chip-ink); border-radius: 14px; padding: 2px 4px 2px 10px; }
+  .chip.new { background: var(--new); color: var(--new-ink); border: 1px dashed var(--new-ink); }
+  .chip button { border: 0; background: transparent; color: inherit; padding: 0 6px;
+                 font-size: 16px; line-height: 1; }
+  .combo { position: relative; }
+  .combo input { width: 100%; }
+  .list { position: absolute; left: 0; right: 0; top: 100%; z-index: 10; background: var(--card);
+          border: 1px solid var(--line); border-radius: 6px; margin-top: 2px; overflow: hidden;
+          box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+  .list div { padding: 6px 10px; cursor: pointer; display: flex; justify-content: space-between;
+              gap: 10px; }
+  .list div.active, .list div:hover { background: var(--chip); }
+  .list small { color: var(--muted); }
+  textarea { width: 100%; min-height: 56px; resize: vertical; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  .status { font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--warn); }
+  mark.hl { color: inherit; border-radius: 3px; padding: 0 1px; scroll-margin: 120px; }
+  mark.hl.candidate { background: #ffd54a; color: #1b2430; }
+  mark.hl.agreed { background: var(--chip); }
+  mark.hl.missed { background: transparent; border-bottom: 2px dotted var(--warn); }
+  mark.hl.focus { outline: 3px solid var(--accent); }
+  #review { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  #review h3 { font-size: 14px; margin: 0 0 6px; }
+  #review .note { color: var(--muted); font-size: 13px; }
+  .cand { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px;
+          border: 1px solid transparent; }
+  .cand.active { border-color: var(--accent); background: var(--chip); }
+  .cand .name { flex: 1; cursor: pointer; font-weight: 600; }
+  .cand small { color: var(--muted); }
+  .cand.rejected .name { text-decoration: line-through; color: var(--muted); }
+  .cand button { padding: 2px 8px; font-size: 13px; }
+  .missed-item { display: inline-block; margin: 2px 4px 2px 0; padding: 1px 8px; cursor: pointer;
+                 border-radius: 10px; border: 1px dotted var(--warn); font-size: 13px; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Skills Radar labeller</h1>
+  <div class="progress">
+    <span id="progressText">Loading…</span>
+    <div class="bar"><div id="progressBar"></div></div>
+  </div>
+  <label style="margin:0;font-weight:400">Show
+    <select id="filter">
+      <option value="todo">not yet labelled</option>
+      <option value="review">to review (system disagrees)</option>
+      <option value="all">all</option>
+      <option value="done">labelled</option>
+      <option value="skip">skipped</option>
+    </select>
+  </label>
+</header>
+
+<main id="main" hidden>
+  <section class="card">
+    <div class="meta"><span class="badge" id="source"></span><span id="position"></span>
+      <span id="location"></span><span id="company"></span><a id="link" target="_blank"
+      rel="noopener noreferrer">open original ↗</a></div>
+    <h2 id="title"></h2>
+    <div class="desc" id="desc"></div>
+  </section>
+
+  <aside class="card side">
+    <label for="skillInput">Skills in this posting</label>
+    <div class="chips" id="chips"></div>
+    <div class="combo">
+      <input type="text" id="skillInput" autocomplete="off" spellcheck="false"
+             placeholder="Type a skill, then Enter">
+      <div class="list" id="list" hidden></div>
+    </div>
+    <div class="hint">Enter adds the highlighted match (↑ ↓ to move). Shift+Enter adds exactly what
+      you typed as a new skill. Yellow chips are not in the vocabulary yet.</div>
+    <label for="notes" style="margin-top:14px">Notes (optional)</label>
+    <textarea id="notes" placeholder="Anything odd about this posting"></textarea>
+    <div class="row">
+      <button id="back">← Back</button>
+      <button id="skip">Skip</button>
+      <button id="save" class="primary">Save &amp; next (Ctrl+Enter)</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div id="review" hidden>
+      <h3>System suggestions you did not label</h3>
+      <div id="cands"></div>
+      <div class="hint" id="candHint">Yellow in the text is where the system looked. Judge the
+        evidence yourself: <b>Y</b> adds, <b>N</b> rejects, <b>J</b>/<b>K</b> move. Ctrl+Enter saves.</div>
+      <h3 style="margin-top:12px">You labelled, system did not find</h3>
+      <div id="missed"></div>
+    </div>
+    <div class="hint" id="reviewNote" hidden></div>
+  </aside>
+</main>
+<div class="empty" id="done" hidden>Nothing to show with this filter. (For "to review", every dev posting with a disagreement has been reviewed.)</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const app = { items: [], labels: {}, vocab: [], names: new Set(), view: [], pos: 0, draft: [],
+              active: 0, matches: [], queue: null, review: null, rej: [], added: [], cand: 0 };
+
+async function api(path, body) {
+  const res = await fetch(path, body ? { method: "POST", body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" } } : undefined);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function applyFilter(keepId) {
+  const mode = $("filter").value;
+  if (mode === "review" && app.queue) {
+    const byId = Object.fromEntries(app.items.map((i) => [i.id, i]));
+    app.view = app.queue.filter((id) => !(app.labels[id] && app.labels[id].reviewed)).map((id) => byId[id]);
+  } else app.view = app.items.filter((item) => {
+    const label = app.labels[item.id];
+    if (mode === "todo") return !label;
+    if (mode === "all") return true;
+    return label && label.status === mode;
+  });
+  const at = keepId ? app.view.findIndex((i) => i.id === keepId) : -1;
+  app.pos = at >= 0 ? at : Math.min(app.pos, Math.max(app.view.length - 1, 0));
+  show();
+}
+
+function updateProgress() {
+  const total = app.items.length;
+  const labels = Object.values(app.labels);
+  const done = labels.filter((l) => l.status === "done").length;
+  const skipped = labels.filter((l) => l.status === "skip").length;
+  $("progressText").textContent = `${done} of ${total} labelled · ${skipped} skipped`;
+  $("progressBar").style.width = total ? `${(100 * (done + skipped)) / total}%` : "0";
+}
+
+function current() { return app.view[app.pos]; }
+
+function show() {
+  updateProgress();
+  const item = current();
+  $("main").hidden = !item;
+  $("done").hidden = !!item;
+  if (!item) return;
+  const label = app.labels[item.id];
+  $("source").textContent = item.source;
+  $("position").textContent = `${app.pos + 1} / ${app.view.length}`;
+  $("company").textContent = item.company || "";
+  $("location").textContent = item.location || "";
+  app.review = null;
+  app.rej = label && label.rejected ? [...label.rejected] : [];
+  app.added = label && label.review_added ? [...label.review_added] : [];
+  renderText();
+  $("desc").scrollTop = 0;
+  const link = $("link");
+  if (item.url) { link.href = item.url; link.hidden = false; } else { link.hidden = true; }
+  app.draft = label && label.status === "done" ? [...label.skills] : [];
+  $("notes").value = label ? label.notes || "" : "";
+  $("skillInput").value = "";
+  hideList();
+  renderChips();
+  setStatus(label ? (label.status === "skip" ? "Skipped earlier." : "Labelled earlier; saving replaces it.") : "");
+  $("back").disabled = app.pos === 0;
+  $("skillInput").focus();
+  loadReview(item);
+}
+
+// ---- review mode ---------------------------------------------------------------------------
+
+function renderMarked(el, text, marks) {
+  el.textContent = "";
+  let at = 0;
+  for (const h of marks) {
+    if (h.start < at) continue;
+    el.append(text.slice(at, h.start));
+    const m = document.createElement("mark");
+    m.className = "hl " + h.kind;
+    m.dataset.i = h.index;
+    m.title = h.skill;
+    m.textContent = text.slice(h.start, h.end);
+    el.append(m);
+    at = h.end;
+  }
+  el.append(text.slice(at));
+}
+
+function renderText() {
+  const item = current();
+  if (!item) return;
+  const marks = { title: [], description: [] };
+  if (app.review && app.review.available) {
+    app.review.highlights.forEach((h, index) => {
+      if (h.kind === "candidate" && app.rej.includes(h.skill)) return;
+      marks[h.field].push({ ...h, index });
+    });
+    for (const f of Object.keys(marks)) marks[f].sort((a, b) => a.start - b.start);
+  }
+  renderMarked($("title"), item.title || "(no title)", item.title ? marks.title : []);
+  renderMarked($("desc"), item.description || "", marks.description);
+}
+
+async function loadReview(item) {
+  $("review").hidden = true;
+  $("reviewNote").hidden = true;
+  const label = app.labels[item.id];
+  if (!label || label.status !== "done") return;
+  let data;
+  try { data = await api("/api/review?id=" + encodeURIComponent(item.id)); }
+  catch (err) { return; }
+  if (!current() || current().id !== item.id) return;
+  app.review = data;
+  if (!data.available) {
+    $("reviewNote").textContent = data.reason;
+    $("reviewNote").hidden = false;
+    return;
+  }
+  app.cand = Math.max(0, data.candidates.findIndex((c) => !c.rejected && !app.rej.includes(c.skill)));
+  renderText();
+  renderReview();
+  if (data.candidates.length) { document.activeElement.blur(); focusCandidate(); }
+}
+
+function candState(c) {
+  if (app.draft.some((d) => d.toLowerCase() === c.skill.toLowerCase())) return "added";
+  if (app.rej.includes(c.skill)) return "rejected";
+  return "pending";
+}
+
+function renderReview() {
+  const r = app.review;
+  if (!r || !r.available) return;
+  $("review").hidden = false;
+  const box = $("cands");
+  box.textContent = "";
+  if (!r.candidates.length) {
+    const p = document.createElement("div");
+    p.className = "note"; p.textContent = "None: the system found nothing you had not labelled.";
+    box.append(p);
+  }
+  r.candidates.forEach((c, i) => {
+    const state = candState(c);
+    const row = document.createElement("div");
+    row.className = "cand " + state + (i === app.cand ? " active" : "");
+    const name = document.createElement("span");
+    name.className = "name"; name.textContent = c.skill;
+    name.title = "Show in the text";
+    name.addEventListener("click", () => { app.cand = i; renderReview(); focusCandidate(); });
+    row.append(name);
+    const n = document.createElement("small");
+    n.textContent = c.count > 1 ? `×${c.count}` : "";
+    row.append(n);
+    if (state === "pending") {
+      const add = document.createElement("button");
+      add.textContent = "Add"; add.addEventListener("click", () => decide(i, "add"));
+      const no = document.createElement("button");
+      no.textContent = "Reject"; no.addEventListener("click", () => decide(i, "reject"));
+      row.append(add, no);
+    } else {
+      const undo = document.createElement("button");
+      undo.textContent = state === "added" ? "Added ✓ undo" : "Rejected · undo";
+      undo.addEventListener("click", () => decide(i, "undo"));
+      row.append(undo);
+    }
+    box.append(row);
+  });
+  const missed = $("missed");
+  missed.textContent = "";
+  if (!r.missed.length) missed.textContent = "Nothing.";
+  for (const m of r.missed) {
+    const tag = document.createElement("span");
+    tag.className = "missed-item";
+    tag.textContent = m.skill + (m.in_vocabulary ? "" : " (not in vocabulary)");
+    tag.title = m.occurrences ? "Show where it appears (the system rejected or did not match it)"
+                              : "Not found in the text by plain search";
+    tag.addEventListener("click", () => scrollToHighlight(m.first, false));
+    missed.append(tag);
+  }
+}
+
+function scrollToHighlight(index, focus) {
+  document.querySelectorAll("mark.hl.focus").forEach((el) => el.classList.remove("focus"));
+  if (index === null || index === undefined) return;
+  const el = document.querySelector(`mark.hl[data-i="${index}"]`);
+  if (!el) return;
+  if (focus) el.classList.add("focus");
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function focusCandidate() {
+  const c = app.review && app.review.candidates[app.cand];
+  scrollToHighlight(c ? c.first : null, true);
+}
+
+function decide(i, action) {
+  const c = app.review.candidates[i];
+  if (action === "add") {
+    if (!app.draft.some((d) => d.toLowerCase() === c.skill.toLowerCase())) app.draft.push(c.skill);
+    if (!app.added.includes(c.skill)) app.added.push(c.skill);
+    app.rej = app.rej.filter((s) => s !== c.skill);
+  } else if (action === "reject") {
+    if (!app.rej.includes(c.skill)) app.rej.push(c.skill);
+  } else {
+    app.draft = app.draft.filter((d) => d.toLowerCase() !== c.skill.toLowerCase());
+    app.added = app.added.filter((s) => s !== c.skill);
+    app.rej = app.rej.filter((s) => s !== c.skill);
+  }
+  renderChips();
+  if (action !== "undo") {
+    const n = app.review.candidates.length;
+    for (let k = 1; k <= n; k++) {
+      const j = (i + k) % n;
+      if (candState(app.review.candidates[j]) === "pending") { app.cand = j; break; }
+    }
+  } else app.cand = i;
+  renderText();
+  renderReview();
+  focusCandidate();
+}
+
+function moveCandidate(step) {
+  const n = app.review && app.review.candidates.length;
+  if (!n) return;
+  app.cand = (app.cand + step + n) % n;
+  renderReview();
+  focusCandidate();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (!app.review || !app.review.available) return;
+  const key = e.key.toLowerCase();
+  if (key === "y" || key === "n") {
+    const c = app.review.candidates[app.cand];
+    if (c) { e.preventDefault(); decide(app.cand, key === "y" ? "add" : "reject"); }
+  } else if (key === "j") moveCandidate(1);
+  else if (key === "k") moveCandidate(-1);
+});
+
+function renderChips() {
+  const box = $("chips");
+  box.textContent = "";
+  for (const skill of app.draft) {
+    const chip = document.createElement("span");
+    chip.className = "chip" + (app.names.has(skill) ? "" : " new");
+    chip.append(skill);
+    const x = document.createElement("button");
+    x.type = "button"; x.textContent = "×"; x.title = "Remove";
+    x.addEventListener("click", () => {
+      app.draft = app.draft.filter((s) => s !== skill);
+      app.added = app.added.filter((s) => s !== skill);
+      renderChips(); if (app.review) renderReview(); $("skillInput").focus();
+    });
+    chip.append(x);
+    box.append(chip);
+  }
+}
+
+function setStatus(text, kind) {
+  const el = $("status");
+  el.textContent = text;
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function findMatches(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const scored = [];
+  for (const skill of app.vocab) {
+    if (app.draft.some((d) => d.toLowerCase() === skill.name.toLowerCase())) continue;
+    let best = 0;
+    for (const name of [skill.name, ...skill.aliases]) {
+      const n = name.toLowerCase();
+      const score = n === q ? 3 : n.startsWith(q) ? 2 : n.includes(q) ? 1 : 0;
+      best = Math.max(best, score);
+    }
+    if (best) scored.push([best, skill]);
+  }
+  scored.sort((a, b) => b[0] - a[0] || a[1].name.localeCompare(b[1].name));
+  return scored.slice(0, 8).map((s) => s[1]);
+}
+
+function hideList() { $("list").hidden = true; app.matches = []; }
+
+function renderList() {
+  const list = $("list");
+  list.textContent = "";
+  if (!app.matches.length) { list.hidden = true; return; }
+  app.matches.forEach((skill, i) => {
+    const row = document.createElement("div");
+    if (i === app.active) row.className = "active";
+    row.append(skill.name);
+    const cat = document.createElement("small");
+    cat.textContent = skill.category.replace("_", " ");
+    row.append(cat);
+    row.addEventListener("mousedown", (e) => { e.preventDefault(); addSkill(skill.name); });
+    list.append(row);
+  });
+  list.hidden = false;
+}
+
+function addSkill(name) {
+  const text = name.trim().replace(/\s+/g, " ");
+  if (text && !app.draft.some((d) => d.toLowerCase() === text.toLowerCase())) app.draft.push(text);
+  $("skillInput").value = "";
+  hideList();
+  renderChips();
+}
+
+$("skillInput").addEventListener("input", (e) => {
+  app.matches = findMatches(e.target.value);
+  app.active = 0;
+  renderList();
+});
+
+$("skillInput").addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); save("done"); return; }
+  if (e.key === "ArrowDown" && app.matches.length) {
+    e.preventDefault(); app.active = (app.active + 1) % app.matches.length; renderList();
+  } else if (e.key === "ArrowUp" && app.matches.length) {
+    e.preventDefault(); app.active = (app.active - 1 + app.matches.length) % app.matches.length; renderList();
+  } else if (e.key === "Escape") {
+    hideList();
+  } else if (e.key === "Backspace" && !e.target.value && app.draft.length) {
+    app.draft.pop(); renderChips();
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    const typed = e.target.value.trim();
+    if (!typed) return;
+    if (e.shiftKey || !app.matches.length) addSkill(typed);
+    else addSkill(app.matches[app.active].name);
+  }
+});
+$("skillInput").addEventListener("blur", () => setTimeout(hideList, 100));
+
+async function save(status) {
+  const item = current();
+  if (!item) return;
+  const pending = $("skillInput").value.trim();
+  if (status === "done" && pending) {
+    setStatus("There is unfinished text in the skill box: press Enter to add it, or clear it.", "err");
+    return;
+  }
+  try {
+    const body = { id: item.id, skills: app.draft, status, notes: $("notes").value };
+    if (status === "done" && app.review && app.review.available) {
+      body.rejected = app.rej; body.review_added = app.added; body.reviewed = true;
+    }
+    const label = await api("/api/label", body);
+    app.labels[item.id] = label;
+    const next = app.view[app.pos + 1];
+    applyFilter(next ? next.id : null);
+    if (!next && $("filter").value !== "todo") app.pos = Math.max(app.view.length - 1, 0);
+    show();
+  } catch (err) {
+    setStatus("Not saved: " + err.message, "err");
+  }
+}
+
+$("save").addEventListener("click", () => save("done"));
+$("skip").addEventListener("click", () => save("skip"));
+$("back").addEventListener("click", () => { if (app.pos > 0) { app.pos -= 1; show(); } });
+$("filter").addEventListener("change", async () => {
+  app.pos = 0;
+  if ($("filter").value === "review") {
+    try { app.queue = (await api("/api/review_queue")).map((q) => q.id); }
+    catch (err) { app.queue = []; }
+  }
+  applyFilter();
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && document.activeElement !== $("skillInput")) {
+    e.preventDefault(); save("done");
+  }
+});
+
+(async function init() {
+  try {
+    const data = await api("/api/state");
+    app.items = data.items; app.labels = data.labels; app.vocab = data.vocabulary;
+    app.names = new Set(app.vocab.map((s) => s.name));
+    applyFilter();
+  } catch (err) {
+    $("progressText").textContent = "Could not load: " + err.message;
+  }
+})();
+</script>
+</body>
+</html>

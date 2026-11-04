@@ -27,6 +27,8 @@ for the design, [docs/roadmap.md](docs/roadmap.md) for phases 2 to 5, and
 | `terraform/envs/dev/` | Dev environment: data buckets, ingestion Lambda, schedule, DLQ, alarm, enrichment and curation Lambdas, Step Functions pipeline with SNS alerts, Glue tables and Athena workgroup |
 | `terraform/modules/` | `data`, `ingest`, `enrich`, `curate`, `orchestrate`, `analytics`, `github_oidc`, `iam_groups` modules |
 | `terraform/modules/analytics/queries/` | Example Athena queries (saved in the workgroup by Terraform) |
+| `src/skillsradar/skills/` | The shared skills vocabulary (`vocabulary.json`): canonical names and aliases |
+| `src/skillsradar/gold/`, `scripts/gold_sample.py`, `scripts/label_server.py` | Gold-set tooling: sampler, local labelling page, label store |
 | `scripts/aws_cli_walkthrough.sh` | Learning aid: the same AWS resources built with plain AWS CLI calls (`DRY_RUN=1` prints them without calling AWS). Not a deployment path |
 | `.github/workflows/` | CI (lint, tests, `terraform fmt/validate`), plan on pull request, apply on merge |
 
@@ -95,7 +97,7 @@ variable, so use the `AWS_PROFILE` environment variable if you use profiles.
    aws lambda invoke --function-name skillsradar-dev-ingest \
      --payload '{"sources":["reed"]}' --cli-binary-format raw-in-base64-out out.json
    ```
-   Valid source names are `adzuna`, `reed` and `hn_hiring`; with no payload, all three run.
+   Valid source names are `adzuna`, `reed`, `hn_hiring` and `devitjobs`; with no payload, all four run. DevITjobs needs no key: it is one daily download of the site's public XML feed.
 
    Turn the daily run on as early as you can: the forecasting work needs months of history, and
    history only accumulates while the pipeline is running.
@@ -164,6 +166,57 @@ quality report in `quality/` in the curated bucket. Three saved queries cover th
 The Lambda uses the AWS SDK for pandas managed layer; if a deploy complains about the layer, set
 `pandas_layer_arn` in `terraform/envs/dev/variables.tf` to the current Python 3.12 x86_64 ARN for
 eu-west-2 from that project's documentation.
+
+## Building the gold set
+
+The skill extractor will be judged against postings labelled by hand. Everything for that runs on
+your own machine; the labels are saved under `data/` (git-ignored, since it holds job text). Read
+[docs/gold-set-guidelines.md](docs/gold-set-guidelines.md) first: consistent labels matter more
+than speed.
+
+```bash
+python scripts/gold_sample.py     # draws 200 varied postings from the curated data (needs AWS login)
+python scripts/label_server.py    # then open http://127.0.0.1:8765
+```
+
+(`make gold-sample` and `make label` do the same.) The page shows one posting at a time. Type a
+skill and press Enter to add it, Ctrl+Enter to save and move on. Labels are written to
+`data/gold/labels.jsonl` after every posting, so you can stop at any point and carry on later. The
+sampler never overwrites an existing sample; `--extend 50` adds more.
+
+### Reviewing your labels against the extractor
+
+Once you have a first batch labelled, pick **to review (system disagrees)** in the labeller's *Show*
+menu. It lists the dev-half postings where the extractor found skills you did not label, most
+disagreement first. For each one the text is highlighted where the extractor matched; you judge the
+evidence and press **Y** to add the skill or **N** to reject it (**J**/**K** move between
+suggestions, Ctrl+Enter saves). Skills you labelled that the extractor missed are listed too, marked
+"not in vocabulary" where that is the reason. Only disagreements are suggested.
+
+Because suggestions can influence you, the test half is blind: no suggestions are shown for it, so
+the held-out score stays honest (`--review-test` overrides this; avoid). Labels added after a
+suggestion are recorded as `review_added`, rejected suggestions as `rejected` (confirmed false
+positives), and `python scripts/evaluate_extractor.py --without-review-added` scores without the
+prompted labels, so you can report both.
+
+## Scoring the skill extractor
+
+`src/skillsradar/skills/extractor.py` is a rules-based baseline: it matches every name and alias in
+the shared vocabulary as whole words (longest match wins, so "T-SQL" is not also "SQL"), and only
+accepts ambiguous words such as R, Go, Spark or Excel when they are capitalised and the text around
+them looks technical.
+
+```bash
+python scripts/evaluate_extractor.py              # dev half: scores plus the errors to learn from
+python scripts/evaluate_extractor.py --split test # test half: scores only
+```
+
+(`make evaluate` does the dev run.) Postings are split 50/50 by a hash of their ID, so a posting
+never changes half as the set grows. Tune rules and vocabulary on **dev** only. Look at **test**
+rarely, for a version you have stopped changing: that is the honest number for the methodology page.
+The report separates recall on every label from recall on skills the vocabulary knows, and lists
+labelled skills missing from the vocabulary (candidates to add, and the seed of emerging-skill
+detection). Even 40 labelled postings give a first read.
 
 ## Running the pipeline
 

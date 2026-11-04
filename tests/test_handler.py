@@ -105,3 +105,22 @@ def test_http_error_carries_the_status_code():
     with pytest.raises(HttpError) as excinfo:
         get_json("https://example.com/x", opener=opener, sleep=lambda s: None)
     assert excinfo.value.status == 404
+
+
+def test_get_bytes_returns_the_body_and_enforces_the_size_cap():
+    import io
+
+    from skillsradar.http import get_bytes
+
+    class Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    opener = lambda request, timeout: Response(b"x" * 100)  # noqa: E731
+    assert get_bytes("https://example.test", opener=opener) == b"x" * 100
+    assert get_bytes("https://example.test", max_bytes=100, opener=opener) == b"x" * 100
+    with pytest.raises(HttpError, match="larger than 99"):
+        get_bytes("https://example.test", max_bytes=99, opener=opener)

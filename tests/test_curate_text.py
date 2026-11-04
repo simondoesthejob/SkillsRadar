@@ -72,3 +72,10 @@ def test_html_to_text_handles_empty_and_plain_text():
     assert html_to_text(None) == ""
     assert html_to_text("") == ""
     assert html_to_text("Plain text, no markup") == "Plain text, no markup"
+
+
+def test_list_items_holding_only_a_bullet_are_dropped():
+    from skillsradar.curate.text import html_to_text
+
+    html = "<ul><li>•</li><li>Python</li><li>•</li><li></li><li>SQL</li></ul>"
+    assert html_to_text(html) == "- Python\n- SQL"

@@ -66,6 +66,10 @@ class _TextExtractor(HTMLParser):
             self.parts.append(data)
 
 
+# A list item holding only a bullet character, as some feeds emit ("<li>•</li>").
+_EMPTY_BULLET = re.compile(r"^-\s*[•·▪●◦*–—-]*\s*$")
+
+
 def html_to_text(html: str | None) -> str:
     """Plain text from an HTML job description: tags dropped, list items kept as "- " lines."""
     if not html:
@@ -74,4 +78,5 @@ def html_to_text(html: str | None) -> str:
     parser.feed(html)
     parser.close()
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in "".join(parser.parts).splitlines()]
+    lines = [line for line in lines if not _EMPTY_BULLET.match(line)]
     return re.sub(r"\n{3,}", "\n\n", "\n".join(lines).replace("\xa0", " ")).strip()

@@ -21,7 +21,7 @@ variable "results_bucket_name" {
 variable "sources" {
   description = "Source names that appear as source=<name> in the raw bucket."
   type        = list(string)
-  default     = ["adzuna", "reed", "hn_hiring"]
+  default     = ["adzuna", "reed", "hn_hiring", "devitjobs"]
 }
 
 variable "projection_start_date" {

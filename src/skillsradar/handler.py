@@ -19,6 +19,7 @@ from skillsradar.config import Settings
 from skillsradar.models import JobPosting
 from skillsradar.sources import JobSource
 from skillsradar.sources.adzuna import AdzunaSource
+from skillsradar.sources.devitjobs import DevITjobsSource
 from skillsradar.sources.hn_hiring import HnWhoIsHiring
 from skillsradar.sources.reed import ReedSource
 
@@ -26,7 +27,7 @@ log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 PutObject = Callable[[str, str, bytes], None]
-ALL_SOURCES = ("adzuna", "reed", "hn_hiring")
+ALL_SOURCES = ("adzuna", "reed", "hn_hiring", "devitjobs")
 
 
 def object_key(source: str, now: datetime) -> str:
@@ -115,6 +116,8 @@ def build_sources(
             yield UnavailableSource("reed", exc)
     if "hn_hiring" in wanted:
         yield HnWhoIsHiring(threads=settings.hn_threads)
+    if "devitjobs" in wanted:
+        yield DevITjobsSource()
 
 
 def lambda_handler(event: dict[str, Any] | None, context: Any) -> dict[str, Any]:

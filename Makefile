@@ -1,7 +1,7 @@
-.PHONY: install lint test fmt tf-fmt
+.PHONY: install lint test fmt tf-fmt gold-sample label evaluate
 
 install:
-	python3 -m pip install -e ".[dev]"
+	python -m pip install -e ".[dev]"
 
 lint:
 	ruff check .
@@ -16,3 +16,12 @@ test:
 
 tf-fmt:
 	terraform fmt -recursive terraform
+
+gold-sample:
+	python scripts/gold_sample.py
+
+label:
+	python scripts/label_server.py
+
+evaluate:
+	python scripts/evaluate_extractor.py

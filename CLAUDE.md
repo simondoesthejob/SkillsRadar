@@ -22,13 +22,14 @@ Differentiators to protect (see docs/roadmap.md):
 - Reed API (basic auth: key as username, empty password; resultsToTake max 100; date format assumed
   day-first dd/mm/yyyy, unverified against the live API).
 - Hacker News "Who is hiring?" via the keyless Algolia API.
+- DevITjobs UK public XML feed (`job_feed.xml`, no key; credit "via DevITjobs" with a link; one fetch a day).
 - LinkedIn is deliberately excluded, including public guest endpoints. Do not add it.
 - Details and call budgets: docs/data-sources.md.
 
 ## Layout
 | Path | Purpose |
 |---|---|
-| `src/skillsradar/` | Python package: `models.py`, `config.py`, `http.py`, `handler.py`, `storage.py`, `sources/{adzuna,reed,hn_hiring}.py`, `curate/` (raw to Parquet), `enrich/` (full Reed descriptions) |
+| `src/skillsradar/` | Python package: `models.py`, `config.py`, `http.py`, `handler.py`, `storage.py`, `sources/{adzuna,reed,hn_hiring,devitjobs}.py`, `curate/` (raw to Parquet), `enrich/` (full Reed descriptions), `skills/` (shared vocabulary), `gold/` (gold-set sampler, label store, local labelling server, dev/test split) |
 | `tests/` | Offline unit tests (fake HTTP and AWS clients) |
 | `terraform/iam/` | Stack: IAM groups and policies (admin applies once, local state, no CI) |
 | `terraform/bootstrap/` | Stack: state bucket and GitHub OIDC roles (applied once locally, local state) |
@@ -95,7 +96,20 @@ Phase 1 (foundations and ingestion) is deployed and running; phase 2 is in progr
   (definition in `pipeline.asl.json.tftpl`, graph checked by `tests/test_pipeline_definition.py`) runs
   ingest, enrich, curate daily at 06:00 London via EventBridge Scheduler; SNS topic emails failures.
   The old direct ingest schedule is now off (`ingest_schedule_enabled = false`); keep it off.
-- Next: cross-source dedupe; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
+- Phase 3 step 1 built, not yet used: gold-set tooling. `scripts/gold_sample.py` samples curated Parquet
+  from S3 (reed 120, HN 60, Adzuna 20; stratified by job family; seeded; never overwrites), `scripts/label_server.py`
+  serves a local labelling page (no pre-suggestions, on purpose, to keep the gold set independent of the
+  extractor). Data lives in git-ignored `data/gold/`. Rules: docs/gold-set-guidelines.md. The vocabulary
+  (`src/skillsradar/skills/vocabulary.json`, 197 seed skills) is shared with the rules extractor, built next.
+- Phase 3 step 2 built: rules extractor `skills/extractor.py`, scoring `skills/evaluate.py`, fixed dev/test
+  split `gold/split.py`, `scripts/evaluate_extractor.py` (`make evaluate`). Tune on dev only; test is for
+  the final score. Waiting on the user's hand labels (~200 target); nothing scored on real data yet.
+- Review mode (built): labeller filter "to review" (`gold/review.py`, `/api/review`, `/api/review_queue`)
+  shows extractor-vs-label disagreements with highlights; dev half only (test is blind unless
+  `--review-test`); labels record `rejected`, `review_added`, `reviewed`; `evaluate_extractor.py
+  --without-review-added`. First 50 labels exist; user is relabelling and then tuning on dev.
+- DevITjobs source built (not yet deployed): `sources/devitjobs.py`; HTML description converted and salary treated as yearly in `curate/pipeline.py`; `devitjobs` added to the ingest and curate source lists and the analytics partition projection (CI apply). Not in the gold set; add later with `--extend` and report separately.
+- Next: tune the extractor on dev labels; cross-source dedupe; then SageMaker pipelines, the API and UI (phases 3 to 5). See docs/roadmap.md.
 - Terraform formatting can be checked here with OpenTofu (`tofu fmt`); providers cannot be fetched
   in the sandbox, so `validate` only runs in CI.
 

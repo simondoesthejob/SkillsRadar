@@ -32,7 +32,7 @@ from skillsradar.storage import ObjectStore, S3Store, enriched_key, enriched_pre
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-ALL_SOURCES = ("adzuna", "reed", "hn_hiring")
+ALL_SOURCES = ("adzuna", "reed", "hn_hiring", "devitjobs")
 METRICS_NAMESPACE = "SkillsRadar/Curation"
 ENRICHED_SOURCES = ("reed",)  # sources whose full descriptions are fetched by the enrich Lambda
 _DT_IN_KEY = re.compile(r"/dt=(\d{4}-\d{2}-\d{2})/")

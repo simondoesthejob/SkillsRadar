@@ -18,6 +18,11 @@ from typing import Any
 
 from skillsradar.curate import hn, rules, salary, text
 
+# Sources whose description is HTML in the raw data (converted to text when curated), and sources
+# whose salary is always quoted per year, so the period is known rather than guessed.
+HTML_DESCRIPTION_SOURCES = frozenset({"devitjobs"})
+STATED_SALARY_PERIOD = {"devitjobs": "annual"}
+
 
 @dataclass
 class CurationResult:
@@ -48,7 +53,10 @@ def _curate_one(
         counts["descriptions_enriched"] += 1
 
     title, pii_title = text.strip_pii(str(record["title"]).strip())
-    description, pii_desc = text.strip_pii(full_text or str(record["description"]).strip())
+    raw_description = str(record["description"]).strip()
+    if source in HTML_DESCRIPTION_SOURCES:
+        raw_description = text.html_to_text(raw_description)
+    description, pii_desc = text.strip_pii(full_text or raw_description)
     counts["emails_removed"] += pii_title["emails"] + pii_desc["emails"]
     counts["phones_removed"] += pii_title["phones"] + pii_desc["phones"]
 
@@ -67,6 +75,8 @@ def _curate_one(
         slug = re.sub(r"[^a-z0-9]+", "_", str(detail["salaryType"]).lower()).strip("_")
         counts[f"salary_type_{slug}"] += 1
         period = salary.parse_period(str(detail["salaryType"]))
+    if period is None and source in STATED_SALARY_PERIOD:
+        period = STATED_SALARY_PERIOD[source]
     annual_low, annual_high, basis = salary.normalise_salary(low, high, predicted, period)
     if period and basis and not basis.endswith("_reported") and basis != "predicted":
         counts["salary_period_conflict"] += 1  # stated period did not fit the figures

@@ -10,6 +10,7 @@ portfolio project. Terms were checked on 2026-10-04; re-check them before publis
 | **Reed Jobseeker API** | Free key from reed.co.uk/developers/jobseeker; HTTP basic auth with the key as username | Reed's public API page lists no rate limits or terms, so read the terms shown when you register and keep call volumes low. Search results carry a truncated description; full text needs one call per job (`/jobs/{id}`), done once per posting by the enrich Lambda (about 1 call a second, 300 per run by default). | Implemented |
 | **Hacker News "Who is hiring?"** | Public Algolia HN API, no key | No key. Be polite (one thread per run). Comments are user-generated free text, so extraction quality varies. | Implemented |
 | **LinkedIn** | No official way to read postings | The Job Posting API is for approved partners *posting* jobs, and is closed to new partners. Automated access, including the unauthenticated guest endpoints, is outside the documented API and in tension with LinkedIn's User Agreement. | Deliberately excluded |
+| **DevITjobs UK XML feed** (`https://devitjobs.uk/job_feed.xml`) | None: one open GET, no key | The site's robots.txt does not restrict the feed, and it is published for job aggregators. One request a day (about 6 MB, around 1,600 live tech postings, full HTML descriptions, UK only). Postings link back to devitjobs.uk, so anywhere they are shown they should be credited "via DevITjobs" with that link. Check the site's terms if you publish the postings themselves. Quirks: the id carries a weekly `-W44` tag that is stripped to keep it stable; about a quarter (agency re-posts) have "£? - ? per year", meaning no salary; salaries are always yearly; the clean `city` is used as the location. The terms of use have not been read in full: check them before publishing. | Built, deploys with the next CI apply |
 
 ## Budgeting API calls
 
@@ -22,7 +23,7 @@ by default (Adzuna allows 25/minute).
 
 Adzuna aggregates vacancies from many boards, including some that also appear on Reed, so the
 same job can arrive from both. Records are only deduplicated within a source (`dedupe_key`).
-Cross-source matching on normalised title, company and location is done in the curated layer
+The DevITjobs feed adds more of the same: its agency postings are often re-posts from other boards (some logos are CV-Library's). Cross-source matching on normalised title, company and location is done in the curated layer
 (phase 2), and its match rate is itself a useful metric to report.
 
 ## Salary fields

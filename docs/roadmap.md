@@ -60,8 +60,11 @@ failed validation stops the run and raises an alert.
 ### 3a. Skill extraction, evaluated
 - **Taxonomy:** seed from a public skills taxonomy such as ESCO (check its licence terms), plus
   tech-specific terms. Keep it in the repo as versioned data.
-- **Gold set:** hand-label roughly 200 to 300 postings across sources with a simple labelling
-  sheet. Split it so the test portion is never used for tuning.
+- **Gold set (tooling built):** hand-label about 200 postings across sources with the local
+  labelling page (`scripts/gold_sample.py`, `scripts/label_server.py`; rules in
+  [gold-set-guidelines.md](gold-set-guidelines.md)). The page gives no automatic suggestions, so the
+  labels stay independent of the extractor. Split the set so the test portion is never used for
+  tuning, and relabel about 20 postings after a few days to measure labelling consistency.
 - **Models:** (1) a dictionary and rules baseline; (2) an embedding-based or fine-tuned
   transformer extractor trained in a SageMaker training job.
 - **Metrics:** skill-level precision, recall and F1, with error analysis by source (Hacker News

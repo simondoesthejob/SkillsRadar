@@ -178,3 +178,25 @@ def test_unknown_salary_type_is_recorded_but_not_used():
     assert result.rows[0]["salary_basis"] == "daily_inferred"
     assert result.stats["salary_type_competitive"] == 1
     assert "salary_period_conflict" not in result.stats
+
+
+def test_devitjobs_html_becomes_text_and_salary_is_reported_annual():
+    record = raw(
+        "devitjobs",
+        "abc",
+        description="<p>Python &amp; SQL</p><ul><li>•</li><li>React</li></ul>",
+        salary_min=9600.0,
+        salary_max=10800.0,
+    )
+    row = curate_day([record], "devitjobs", NOW).rows[0]
+    assert row["description"] == "Python & SQL\n\n- React"
+    assert row["description_truncated"] is False
+    # a stated yearly figure is trusted even where its size alone would look like a monthly one
+    assert (row["salary_annual_min"], row["salary_annual_max"]) == (9600, 10800)
+    assert row["salary_basis"] == "annual_reported"
+
+
+def test_devitjobs_without_a_salary_has_no_basis():
+    record = raw("devitjobs", "abc", salary_min=None, salary_max=None)
+    row = curate_day([record], "devitjobs", NOW).rows[0]
+    assert row["salary_basis"] is None and row["salary_annual_min"] is None
